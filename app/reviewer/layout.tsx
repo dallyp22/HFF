@@ -14,11 +14,8 @@ export default async function ReviewerLayout({
     redirect('/sign-in')
   }
 
-  // Check if user is a reviewer (organization member)
-  const orgs = (user as any).organizationMemberships
-  if (!orgs || orgs.length === 0) {
-    redirect('/dashboard')
-  }
+  // Middleware handles org membership check and redirects
+  // No need to check again here to avoid redirect loops
 
   return (
     <div className="flex min-h-screen flex-col">
