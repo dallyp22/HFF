@@ -33,7 +33,7 @@ export async function getCurrentUserWithOrgRole() {
   })
 
   // Check organization role from Clerk
-  const orgRole = clerkUser.organizationMemberships?.[0]?.role
+  const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
   
   return {
     user,

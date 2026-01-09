@@ -10,7 +10,7 @@ export async function canAccessApplication(applicationId: string): Promise<boole
   if (!clerkUser) return false
 
   // Reviewers (org members) can access all applications
-  if (clerkUser.organizationMemberships && clerkUser.organizationMemberships.length > 0) {
+  if ((clerkUser as any).organizationMemberships && (clerkUser as any).organizationMemberships.length > 0) {
     return true
   }
 
@@ -41,7 +41,7 @@ export async function canAccessOrganization(organizationId: string): Promise<boo
   if (!clerkUser) return false
 
   // Reviewers can access all organizations
-  if (clerkUser.organizationMemberships && clerkUser.organizationMemberships.length > 0) {
+  if ((clerkUser as any).organizationMemberships && (clerkUser as any).organizationMemberships.length > 0) {
     return true
   }
 
@@ -73,7 +73,7 @@ export async function canModifyApplication(applicationId: string): Promise<boole
   if (!application) return false
 
   // Managers and admins can modify any application
-  const orgRole = clerkUser.organizationMemberships?.[0]?.role
+  const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
   if (orgRole === 'org:manager' || orgRole === 'org:admin') {
     return true
   }
@@ -99,7 +99,7 @@ export async function isReviewer(): Promise<boolean> {
   
   if (!clerkUser) return false
 
-  return !!(clerkUser.organizationMemberships && clerkUser.organizationMemberships.length > 0)
+  return !!((clerkUser as any).organizationMemberships && (clerkUser as any).organizationMemberships.length > 0)
 }
 
 /**
@@ -110,7 +110,7 @@ export async function isManager(): Promise<boolean> {
   
   if (!clerkUser) return false
 
-  const orgRole = clerkUser.organizationMemberships?.[0]?.role
+  const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
   return orgRole === 'org:manager' || orgRole === 'org:admin'
 }
 
@@ -122,6 +122,6 @@ export async function isAdmin(): Promise<boolean> {
   
   if (!clerkUser) return false
 
-  const orgRole = clerkUser.organizationMemberships?.[0]?.role
+  const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
   return orgRole === 'org:admin'
 }

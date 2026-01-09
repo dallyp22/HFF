@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
 import { AlertCircle, FileText, Upload, User } from 'lucide-react'
 import { calculateProfileCompletion } from '@/lib/validation/profile'
+import type { Application } from '@prisma/client'
 
 export default async function DashboardPage() {
   const clerkUser = await currentUser()
@@ -26,13 +27,13 @@ export default async function DashboardPage() {
 
   const organization = user?.organization
   const profileCompletion = organization ? calculateProfileCompletion(organization as any) : 0
-  const applications = organization?.applications || []
+  const applications: Application[] = organization?.applications || []
 
   const stats = {
-    draft: applications.filter(a => a.status === 'DRAFT').length,
-    submitted: applications.filter(a => a.status === 'SUBMITTED').length,
-    underReview: applications.filter(a => a.status === 'UNDER_REVIEW').length,
-    approved: applications.filter(a => a.status === 'APPROVED').length,
+    draft: applications.filter((a: Application) => a.status === 'DRAFT').length,
+    submitted: applications.filter((a: Application) => a.status === 'SUBMITTED').length,
+    underReview: applications.filter((a: Application) => a.status === 'UNDER_REVIEW').length,
+    approved: applications.filter((a: Application) => a.status === 'APPROVED').length,
   }
 
   return (
@@ -152,7 +153,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {applications.slice(0, 5).map(app => (
+                {applications.slice(0, 5).map((app: Application) => (
                   <div key={app.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                     <div>
                       <p className="font-medium">{app.projectTitle || 'Untitled Application'}</p>

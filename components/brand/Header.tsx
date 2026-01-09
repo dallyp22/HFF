@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export function Header({ variant = 'public' }: HeaderProps) {
   const { isSignedIn, user } = useUser()
-  const isReviewer = user?.organizationMemberships && user.organizationMemberships.length > 0
+  const isReviewer = (user as any)?.organizationMemberships && (user as any).organizationMemberships.length > 0
 
   return (
     <header className="border-b bg-white">
@@ -68,7 +68,7 @@ export function Header({ variant = 'public' }: HeaderProps) {
               >
                 Organizations
               </Link>
-              {isReviewer && user.organizationMemberships[0]?.role === 'org:admin' && (
+              {isReviewer && (user as any).organizationMemberships[0]?.role === 'org:admin' && (
                 <Link 
                   href="/reviewer/admin" 
                   className="text-sm font-medium text-gray-700 hover:text-[var(--hff-teal)] transition-colors"

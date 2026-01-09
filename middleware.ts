@@ -28,28 +28,31 @@ const isAdminRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   // Public routes - no auth required
   if (isPublicRoute(req)) return
-
-  const { userId, orgRole } = await auth()
-
+  
+  const authResult = await auth()
+  const { userId, orgRole } = authResult
+  
   // All other routes require authentication
   if (!userId) {
-    return auth().redirectToSignIn()
+    const signInUrl = new URL('/sign-in', req.url)
+    signInUrl.searchParams.set('redirect_url', req.url)
+    return Response.redirect(signInUrl)
   }
-
+  
   // Admin routes - require admin role
   if (isAdminRoute(req)) {
     if (orgRole !== 'org:admin') {
       return Response.redirect(new URL('/reviewer/dashboard', req.url))
     }
   }
-
+  
   // Reviewer routes - require organization membership
   if (isReviewerRoute(req)) {
     if (!orgRole) {
       return Response.redirect(new URL('/dashboard', req.url))
     }
   }
-
+  
   // Applicant routes - accessible to authenticated non-org users
   if (isApplicantRoute(req)) {
     if (orgRole) {

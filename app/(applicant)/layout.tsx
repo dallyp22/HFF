@@ -15,7 +15,8 @@ export default async function ApplicantLayout({
   }
 
   // If user is a reviewer, redirect to reviewer dashboard
-  if (user.organizationMemberships && user.organizationMemberships.length > 0) {
+  const orgs = (user as any).organizationMemberships
+  if (orgs && orgs.length > 0) {
     redirect('/reviewer/dashboard')
   }
 

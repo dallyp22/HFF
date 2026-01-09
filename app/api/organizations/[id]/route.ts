@@ -29,7 +29,7 @@ export async function GET(
       select: { organizationId: true },
     })
 
-    const isReviewer = user.organizationMemberships && user.organizationMemberships.length > 0
+    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
 
     if (!isReviewer && dbUser?.organizationId !== id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -63,7 +63,7 @@ export async function PATCH(
       select: { organizationId: true },
     })
 
-    const isReviewer = user.organizationMemberships && user.organizationMemberships.length > 0
+    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
 
     if (!isReviewer && dbUser?.organizationId !== id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

@@ -116,7 +116,7 @@ Heistand Family Foundation`,
 
 Congratulations! We are pleased to inform you that your grant application for "{{projectTitle}}" has been approved.
 
-Grant Amount: ${{amountApproved}}
+Grant Amount: $\{\{amountApproved\}\}
 
 We will be in touch shortly with next steps regarding the grant agreement and disbursement process.
 
