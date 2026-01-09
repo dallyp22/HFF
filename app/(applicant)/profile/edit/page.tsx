@@ -25,11 +25,8 @@ export default function ProfileEditPage() {
   const [saving, setSaving] = useState(false)
   const [organizationId, setOrganizationId] = useState<string | null>(null)
 
-  const form = useForm<OrganizationProfileFormData>({
-    resolver: zodResolver(organizationProfileSchema),
-    defaultValues: {
-      is501c3: true,
-    },
+  const form = useForm({
+    resolver: zodResolver(organizationProfileSchema) as any,
   })
 
   const formData = form.watch()
@@ -68,7 +65,7 @@ export default function ProfileEditPage() {
     loadProfile()
   }, [form])
 
-  async function onSubmit(data: OrganizationProfileFormData) {
+  async function onSubmit(data: any) {
     setSaving(true)
     try {
       const url = organizationId 
@@ -159,7 +156,7 @@ export default function ProfileEditPage() {
                     placeholder="Official legal name"
                   />
                   {form.formState.errors.legalName && (
-                    <p className="text-sm text-red-600">{form.formState.errors.legalName.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.legalName.message)}</p>
                   )}
                 </div>
 
@@ -180,7 +177,7 @@ export default function ProfileEditPage() {
                     placeholder="XX-XXXXXXX"
                   />
                   {form.formState.errors.ein && (
-                    <p className="text-sm text-red-600">{form.formState.errors.ein.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.ein.message)}</p>
                   )}
                 </div>
 
@@ -217,9 +214,9 @@ export default function ProfileEditPage() {
                   {...form.register('address')}
                   placeholder="123 Main Street"
                 />
-                {form.formState.errors.address && (
-                  <p className="text-sm text-red-600">{form.formState.errors.address.message}</p>
-                )}
+                  {form.formState.errors.address && (
+                    <p className="text-sm text-red-600">{String(form.formState.errors.address.message)}</p>
+                  )}
               </div>
 
               <div className="space-y-2">
@@ -240,7 +237,7 @@ export default function ProfileEditPage() {
                     placeholder="Omaha"
                   />
                   {form.formState.errors.city && (
-                    <p className="text-sm text-red-600">{form.formState.errors.city.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.city.message)}</p>
                   )}
                 </div>
 
@@ -253,7 +250,7 @@ export default function ProfileEditPage() {
                     maxLength={2}
                   />
                   {form.formState.errors.state && (
-                    <p className="text-sm text-red-600">{form.formState.errors.state.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.state.message)}</p>
                   )}
                 </div>
 
@@ -265,7 +262,7 @@ export default function ProfileEditPage() {
                     placeholder="68102"
                   />
                   {form.formState.errors.zipCode && (
-                    <p className="text-sm text-red-600">{form.formState.errors.zipCode.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.zipCode.message)}</p>
                   )}
                 </div>
               </div>
@@ -294,7 +291,7 @@ export default function ProfileEditPage() {
                     placeholder="(402) 555-0100"
                   />
                   {form.formState.errors.phone && (
-                    <p className="text-sm text-red-600">{form.formState.errors.phone.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.phone.message)}</p>
                   )}
                 </div>
 
@@ -332,9 +329,9 @@ export default function ProfileEditPage() {
                   placeholder="Describe your organization's mission and purpose..."
                   rows={4}
                 />
-                {form.formState.errors.missionStatement && (
-                  <p className="text-sm text-red-600">{form.formState.errors.missionStatement.message}</p>
-                )}
+                  {form.formState.errors.missionStatement && (
+                    <p className="text-sm text-red-600">{String(form.formState.errors.missionStatement.message)}</p>
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -399,7 +396,7 @@ export default function ProfileEditPage() {
                     placeholder="Jane Smith"
                   />
                   {form.formState.errors.executiveDirectorName && (
-                    <p className="text-sm text-red-600">{form.formState.errors.executiveDirectorName.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.executiveDirectorName.message)}</p>
                   )}
                 </div>
 
@@ -412,7 +409,7 @@ export default function ProfileEditPage() {
                     placeholder="jane@example.org"
                   />
                   {form.formState.errors.executiveDirectorEmail && (
-                    <p className="text-sm text-red-600">{form.formState.errors.executiveDirectorEmail.message}</p>
+                    <p className="text-sm text-red-600">{String(form.formState.errors.executiveDirectorEmail.message)}</p>
                   )}
                 </div>
 

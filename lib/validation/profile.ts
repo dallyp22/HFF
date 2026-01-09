@@ -32,23 +32,23 @@ export const organizationProfileSchema = z.object({
   executiveDirectorPhone: z.string().min(10, 'Phone number is required'),
 
   // Organizational Capacity
-  fullTimeStaff: z.coerce.number().int().min(0).optional(),
-  partTimeStaff: z.coerce.number().int().min(0).optional(),
-  volunteers: z.coerce.number().int().min(0).optional(),
-  boardMembers: z.coerce.number().int().min(0).optional(),
+  fullTimeStaff: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(0).optional()),
+  partTimeStaff: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(0).optional()),
+  volunteers: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(0).optional()),
+  boardMembers: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(0).optional()),
 
   // Financial
-  annualBudget: z.coerce.number().min(0).optional(),
+  annualBudget: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
   fiscalYearEnd: z.string().optional(),
 
   // Form 990 Summary
-  form990Year: z.coerce.number().int().min(2000).max(new Date().getFullYear()).optional(),
-  form990TotalRevenue: z.coerce.number().min(0).optional(),
-  form990TotalExpenses: z.coerce.number().min(0).optional(),
-  form990NetAssets: z.coerce.number().optional(),
-  form990ProgramExpenses: z.coerce.number().min(0).optional(),
-  form990AdminExpenses: z.coerce.number().min(0).optional(),
-  form990FundraisingExpenses: z.coerce.number().min(0).optional(),
+  form990Year: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(2000).max(new Date().getFullYear()).optional()),
+  form990TotalRevenue: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
+  form990TotalExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
+  form990NetAssets: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().optional()),
+  form990ProgramExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
+  form990AdminExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
+  form990FundraisingExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
 })
 
 export type OrganizationProfileFormData = z.infer<typeof organizationProfileSchema>
