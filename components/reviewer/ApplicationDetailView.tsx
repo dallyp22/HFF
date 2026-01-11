@@ -11,6 +11,8 @@ import { formatFileSize } from '@/lib/storage'
 import { AISummaryDisplay } from '@/components/reviewer/AISummaryDisplay'
 import { StatusChangeDialog } from '@/components/reviewer/StatusChangeDialog'
 import { InfoRequestDialog } from '@/components/reviewer/InfoRequestDialog'
+import { VotingPanel } from '@/components/reviewer/VotingPanel'
+import { NotesPanel } from '@/components/reviewer/NotesPanel'
 import { useRouter } from 'next/navigation'
 
 interface ApplicationDetailViewProps {
@@ -311,6 +313,22 @@ export function ApplicationDetailView({
               </div>
             )}
 
+            {/* Voting Tab */}
+            {activeTab === 'voting' && (
+              <VotingPanel
+                applicationId={application.id}
+                currentUserId={application.votes?.[0]?.reviewerId || 'unknown'}
+              />
+            )}
+
+            {/* Notes Tab */}
+            {activeTab === 'notes' && (
+              <NotesPanel
+                applicationId={application.id}
+                initialNotes={application.notes || []}
+              />
+            )}
+
             {/* Documents Tab */}
             {activeTab === 'docs' && (
               <div className="space-y-2">
@@ -339,6 +357,37 @@ export function ApplicationDetailView({
                     <p className="text-sm">No documents attached</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* History Tab */}
+            {activeTab === 'history' && (
+              <div>
+                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Status History</h3>
+                <div className="space-y-3">
+                  {application.statusHistory && application.statusHistory.length > 0 ? (
+                    application.statusHistory.map((history: any) => (
+                      <div key={history.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                        <div className="mt-1">
+                          <div className="w-2 h-2 rounded-full bg-[var(--hff-teal)]" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">
+                            Status changed to {history.newStatus.replace(/_/g, ' ')}
+                          </p>
+                          {history.reason && (
+                            <p className="text-sm text-gray-600 mt-1">{history.reason}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {history.changedByName} • {format(new Date(history.createdAt), 'MMM d, yyyy h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center py-8 text-gray-500 text-sm">No status changes yet</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
