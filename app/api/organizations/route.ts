@@ -11,11 +11,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user already has an organization
-    const existingUser = await prisma.user.findUnique({
+    // Check if user exists in database, create if not (webhook fallback)
+    let existingUser = await prisma.user.findUnique({
       where: { clerkId: user.id },
       include: { organization: true },
     })
+
+    if (!existingUser) {
+      // Auto-create user if webhook hasn't synced yet
+      await prisma.user.create({
+        data: {
+          clerkId: user.id,
+          email: user.emailAddresses[0]?.emailAddress || '',
+          firstName: user.firstName || null,
+          lastName: user.lastName || null,
+          emailNotifications: true,
+        },
+      })
+      
+      // Fetch with organization relation
+      existingUser = await prisma.user.findUnique({
+        where: { clerkId: user.id },
+        include: { organization: true },
+      })
+    }
 
     if (existingUser?.organizationId) {
       return NextResponse.json(
@@ -61,10 +80,17 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Error creating organization:', error)
     
-    if (error instanceof Error && error.name === 'ZodError') {
+    if (error instanceof Error) {
+      if (error.name === 'ZodError') {
+        return NextResponse.json(
+          { error: 'Invalid form data', details: error.message },
+          { status: 400 }
+        )
+      }
+      
       return NextResponse.json(
-        { error: 'Invalid form data', details: error },
-        { status: 400 }
+        { error: 'Failed to create organization', details: error.message },
+        { status: 500 }
       )
     }
 
@@ -83,10 +109,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const dbUser = await prisma.user.findUnique({
+    let dbUser = await prisma.user.findUnique({
       where: { clerkId: user.id },
       include: { organization: true },
     })
+
+    // Auto-create user if doesn't exist (webhook fallback)
+    if (!dbUser) {
+      await prisma.user.create({
+        data: {
+          clerkId: user.id,
+          email: user.emailAddresses[0]?.emailAddress || '',
+          firstName: user.firstName || null,
+          lastName: user.lastName || null,
+          emailNotifications: true,
+        },
+      })
+      
+      // Fetch with organization relation
+      dbUser = await prisma.user.findUnique({
+        where: { clerkId: user.id },
+        include: { organization: true },
+      })
+    }
 
     if (!dbUser?.organization) {
       return NextResponse.json({ organization: null })
@@ -95,6 +140,14 @@ export async function GET() {
     return NextResponse.json(dbUser.organization)
   } catch (error) {
     console.error('Error fetching organization:', error)
+    
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: 'Failed to fetch organization', details: error.message },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch organization' },
       { status: 500 }
