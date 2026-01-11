@@ -254,6 +254,7 @@ model Application {
   notes                 Note[]
   statusHistory         StatusHistory[]
   communications        Communication[]
+  votes                 Vote[]
   
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
@@ -318,6 +319,23 @@ model Communication {
   
   @@index([applicationId])
   @@index([responseRequired, responseReceivedAt])
+}
+
+model Vote {
+  id                    String      @id @default(cuid())
+  applicationId         String
+  application           Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  reviewerId            String      // Clerk user ID
+  reviewerName          String
+  vote                  String      // 'APPROVE' | 'DECLINE' | 'ABSTAIN'
+  reasoning             String?     @db.Text
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  @@unique([applicationId, reviewerId])
+  @@index([applicationId])
 }
 
 // ============================================

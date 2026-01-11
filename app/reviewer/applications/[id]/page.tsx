@@ -1,3 +1,4 @@
+import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +9,11 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { Download, FileText } from 'lucide-react'
 import { formatFileSize } from '@/lib/storage'
+import { VotingPanel } from '@/components/reviewer/VotingPanel'
+import { NotesPanel } from '@/components/reviewer/NotesPanel'
+import { StatusChangeDialog } from '@/components/reviewer/StatusChangeDialog'
+import { InfoRequestDialog } from '@/components/reviewer/InfoRequestDialog'
+import { isAdmin, isManager } from '@/lib/auth/access'
 
 export default async function ApplicationDetailPage({
   params,
@@ -15,6 +21,7 @@ export default async function ApplicationDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const user = await currentUser()
 
   const application = await prisma.application.findUnique({
     where: { id },
@@ -30,12 +37,21 @@ export default async function ApplicationDetailPage({
       communications: {
         orderBy: { sentAt: 'desc' },
       },
+      votes: {
+        orderBy: { createdAt: 'desc' },
+      },
     },
   })
 
   if (!application) {
     notFound()
   }
+
+  const userIsAdmin = await isAdmin()
+  const userIsManager = await isManager()
+  
+  const approveVotes = application.votes.filter(v => v.vote === 'APPROVE').length
+  const declineVotes = application.votes.filter(v => v.vote === 'DECLINE').length
 
   const statusColors = {
     DRAFT: 'bg-gray-100 text-gray-700',
@@ -70,9 +86,23 @@ export default async function ApplicationDetailPage({
 
           {/* Manager Actions */}
           <div className="flex gap-2">
-            <Button variant="outline">Change Status</Button>
-            <Button variant="outline">Request Information</Button>
-            <Button variant="outline">Add Note</Button>
+            {userIsAdmin && (
+              <StatusChangeDialog
+                applicationId={application.id}
+                currentStatus={application.status}
+                approveVotes={approveVotes}
+                declineVotes={declineVotes}
+                open={false}
+                onOpenChange={() => {}}
+              />
+            )}
+            {userIsManager && (
+              <InfoRequestDialog
+                applicationId={application.id}
+                open={false}
+                onOpenChange={() => {}}
+              />
+            )}
           </div>
         </div>
 
@@ -80,6 +110,9 @@ export default async function ApplicationDetailPage({
         <Tabs defaultValue="summary" className="space-y-6">
           <TabsList>
             <TabsTrigger value="summary">AI Summary</TabsTrigger>
+            <TabsTrigger value="voting">
+              Voting ({approveVotes}/{application.votes.length})
+            </TabsTrigger>
             <TabsTrigger value="application">Application</TabsTrigger>
             <TabsTrigger value="organization">Organization</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -162,6 +195,14 @@ export default async function ApplicationDetailPage({
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Voting Tab */}
+          <TabsContent value="voting">
+            <VotingPanel
+              applicationId={application.id}
+              currentUserId={user!.id}
+            />
           </TabsContent>
 
           {/* Application Tab */}
@@ -311,28 +352,10 @@ export default async function ApplicationDetailPage({
 
           {/* Notes Tab */}
           <TabsContent value="notes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Private Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {application.notes.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">No notes yet</p>
-                ) : (
-                  <div className="space-y-4">
-                    {application.notes.map((note) => (
-                      <div key={note.id} className="border-l-4 border-[var(--hff-teal)] pl-4 py-2">
-                        <p className="text-gray-700 mb-2">{note.content}</p>
-                        <p className="text-sm text-gray-500">
-                          {note.authorName} • {format(new Date(note.createdAt), 'MMM d, yyyy h:mm a')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Button className="mt-4">Add Note</Button>
-              </CardContent>
-            </Card>
+            <NotesPanel
+              applicationId={application.id}
+              initialNotes={application.notes}
+            />
           </TabsContent>
 
           {/* History Tab */}
