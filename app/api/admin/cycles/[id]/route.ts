@@ -52,3 +52,112 @@ export async function PATCH(
     )
   }
 }
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const user = await currentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const hasPermission = await isAdmin()
+
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const data = await req.json()
+
+    // If setting as active, deactivate all others
+    if (data.isActive) {
+      await prisma.grantCycleConfig.updateMany({
+        where: { NOT: { id } },
+        data: { isActive: false },
+      })
+    }
+
+    const cycle = await prisma.grantCycleConfig.update({
+      where: { id },
+      data: {
+        loiOpenDate: data.loiOpenDate ? new Date(data.loiOpenDate) : null,
+        loiDeadline: data.loiDeadline ? new Date(data.loiDeadline) : undefined,
+        fullAppDeadline: data.fullAppDeadline ? new Date(data.fullAppDeadline) : null,
+        reviewStartDate: data.reviewStartDate ? new Date(data.reviewStartDate) : null,
+        decisionDate: data.decisionDate ? new Date(data.decisionDate) : null,
+        maxRequestAmount: data.maxRequestAmount ? parseFloat(data.maxRequestAmount) : null,
+        isActive: data.isActive,
+        acceptingApplications: data.acceptingApplications,
+      },
+    })
+
+    return NextResponse.json(cycle)
+  } catch (error) {
+    console.error('Error updating cycle:', error)
+    return NextResponse.json(
+      { error: 'Failed to update cycle' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const user = await currentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const hasPermission = await isAdmin()
+
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Get cycle info
+    const cycle = await prisma.grantCycleConfig.findUnique({
+      where: { id },
+    })
+
+    if (!cycle) {
+      return NextResponse.json({ error: 'Cycle not found' }, { status: 404 })
+    }
+
+    // Check if cycle has applications
+    const appCount = await prisma.application.count({
+      where: {
+        grantCycle: cycle.cycle,
+        cycleYear: cycle.year,
+      },
+    })
+
+    if (appCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete cycle with ${appCount} application(s). Please remove or reassign applications first.` },
+        { status: 400 }
+      )
+    }
+
+    await prisma.grantCycleConfig.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting cycle:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete cycle' },
+      { status: 500 }
+    )
+  }
+}
+

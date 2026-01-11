@@ -30,3 +30,83 @@ export async function GET() {
     )
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const user = await currentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const hasPermission = await isAdmin()
+
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const data = await req.json()
+
+    if (!data.cycle || !data.year || !data.loiDeadline) {
+      return NextResponse.json(
+        { error: 'Missing required fields: cycle, year, and loiDeadline are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if cycle already exists
+    const existing = await prisma.grantCycleConfig.findUnique({
+      where: {
+        cycle_year: {
+          cycle: data.cycle,
+          year: parseInt(data.year),
+        },
+      },
+    })
+
+    if (existing) {
+      return NextResponse.json(
+        { error: `${data.cycle} ${data.year} cycle already exists` },
+        { status: 400 }
+      )
+    }
+
+    // If setting as active, deactivate all others
+    if (data.isActive) {
+      await prisma.grantCycleConfig.updateMany({
+        data: { isActive: false },
+      })
+    }
+
+    const cycle = await prisma.grantCycleConfig.create({
+      data: {
+        cycle: data.cycle,
+        year: parseInt(data.year),
+        loiOpenDate: data.loiOpenDate ? new Date(data.loiOpenDate) : null,
+        loiDeadline: new Date(data.loiDeadline),
+        fullAppDeadline: data.fullAppDeadline ? new Date(data.fullAppDeadline) : null,
+        reviewStartDate: data.reviewStartDate ? new Date(data.reviewStartDate) : null,
+        decisionDate: data.decisionDate ? new Date(data.decisionDate) : null,
+        maxRequestAmount: data.maxRequestAmount ? parseFloat(data.maxRequestAmount) : null,
+        isActive: data.isActive || false,
+        acceptingApplications: data.acceptingApplications || false,
+      },
+    })
+
+    return NextResponse.json(cycle)
+  } catch (error) {
+    console.error('Error creating cycle:', error)
+    
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: 'Failed to create cycle', details: error.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to create cycle' },
+      { status: 500 }
+    )
+  }
+}
