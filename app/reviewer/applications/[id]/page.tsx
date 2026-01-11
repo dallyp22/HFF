@@ -12,6 +12,7 @@ import { formatFileSize } from '@/lib/storage'
 import { VotingPanel } from '@/components/reviewer/VotingPanel'
 import { NotesPanel } from '@/components/reviewer/NotesPanel'
 import { ApplicationActions } from '@/components/reviewer/ApplicationActions'
+import { AISummaryDisplay } from '@/components/reviewer/AISummaryDisplay'
 import { isAdmin, isManager } from '@/lib/auth/access'
 
 export default async function ApplicationDetailPage({
@@ -126,79 +127,17 @@ export default async function ApplicationDetailPage({
 
           {/* AI Summary Tab */}
           <TabsContent value="summary">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI-Generated Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {application.aiSummary ? (
-                  <div className="space-y-6">
-                    <div className="prose max-w-none">
-                      <p>{application.aiSummary}</p>
-                    </div>
-
-                    {application.aiMissionAlignment && (
-                      <div>
-                        <h3 className="font-semibold mb-2">Mission Alignment</h3>
-                        <div className="flex items-center gap-4">
-                          <div className="text-3xl font-bold text-[var(--hff-teal)]">
-                            {application.aiMissionAlignment}/100
-                          </div>
-                          <div className="flex-1">
-                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-[var(--hff-teal)]"
-                                style={{ width: `${application.aiMissionAlignment}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {application.aiStrengths && application.aiStrengths.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold mb-2 text-green-700">Strengths</h3>
-                        <ul className="list-disc list-inside space-y-1">
-                          {application.aiStrengths.map((strength, i) => (
-                            <li key={i} className="text-gray-700">{strength}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {application.aiConcerns && application.aiConcerns.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold mb-2 text-amber-700">Concerns</h3>
-                        <ul className="list-disc list-inside space-y-1">
-                          {application.aiConcerns.map((concern, i) => (
-                            <li key={i} className="text-gray-700">{concern}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {application.aiQuestions && application.aiQuestions.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold mb-2">Recommended Questions</h3>
-                        <ol className="list-decimal list-inside space-y-1">
-                          {application.aiQuestions.map((question, i) => (
-                            <li key={i} className="text-gray-700">{question}</li>
-                          ))}
-                        </ol>
-                      </div>
-                    )}
-
-                    <Button variant="outline" size="sm">Regenerate Summary</Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">No AI summary generated yet</p>
-                    <Button>Generate Summary</Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <AISummaryDisplay
+              summary={application.aiSummary}
+              missionAlignment={application.aiMissionAlignment}
+              budgetAnalysis={application.aiBudgetAnalysis}
+              strengths={application.aiStrengths || []}
+              concerns={application.aiConcerns || []}
+              questions={application.aiQuestions || []}
+              generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
+              applicationId={application.id}
+              isAdmin={userIsAdmin}
+            />
           </TabsContent>
 
           {/* Voting Tab */}
