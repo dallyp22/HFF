@@ -73,26 +73,57 @@ export async function PATCH(
 
     const body = await req.json()
 
-    // Calculate percentage requested if amounts are provided
-    let percentageRequested = body.percentageRequested
-    if (body.amountRequested && body.totalProjectBudget) {
-      percentageRequested = (body.amountRequested / body.totalProjectBudget) * 100
+    // Convert and clean data
+    const updateData: any = {
+      lastSavedAt: new Date(),
     }
+
+    // String fields
+    const stringFields = ['projectTitle', 'projectDescription', 'projectGoals', 'targetPopulation', 
+      'geographicArea', 'povertyIndicators', 'schoolsServed', 'otherFundingSources', 
+      'previousHFFGrants', 'expectedOutcomes', 'measurementPlan', 'sustainabilityPlan']
+    
+    stringFields.forEach(field => {
+      if (body[field] !== undefined && body[field] !== '') {
+        updateData[field] = body[field]
+      }
+    })
+
+    // Number fields
+    if (body.childrenServed) updateData.childrenServed = parseInt(body.childrenServed)
+    if (body.ageRangeStart) updateData.ageRangeStart = parseInt(body.ageRangeStart)
+    if (body.ageRangeEnd) updateData.ageRangeEnd = parseInt(body.ageRangeEnd)
+    if (body.beneficiariesCount) updateData.beneficiariesCount = parseInt(body.beneficiariesCount)
+    
+    // Decimal fields
+    if (body.amountRequested) updateData.amountRequested = parseFloat(body.amountRequested)
+    if (body.totalProjectBudget) updateData.totalProjectBudget = parseFloat(body.totalProjectBudget)
+    
+    // Calculate percentage
+    if (updateData.amountRequested && updateData.totalProjectBudget) {
+      updateData.percentageRequested = (updateData.amountRequested / updateData.totalProjectBudget) * 100
+    }
+
+    // Date fields
+    if (body.projectStartDate) updateData.projectStartDate = new Date(body.projectStartDate)
+    if (body.projectEndDate) updateData.projectEndDate = new Date(body.projectEndDate)
 
     const application = await prisma.application.update({
       where: { id },
-      data: {
-        ...body,
-        percentageRequested,
-        projectStartDate: body.projectStartDate ? new Date(body.projectStartDate) : undefined,
-        projectEndDate: body.projectEndDate ? new Date(body.projectEndDate) : undefined,
-        lastSavedAt: new Date(),
-      },
+      data: updateData,
     })
 
     return NextResponse.json(application)
   } catch (error) {
     console.error('Error updating application:', error)
+    
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: 'Failed to update application', details: error.message },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update application' },
       { status: 500 }
