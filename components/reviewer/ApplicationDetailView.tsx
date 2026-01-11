@@ -136,12 +136,15 @@ export function ApplicationDetailView({
         <div className="flex-1 flex flex-col">
           <div className="flex-1 overflow-y-auto p-4">
             {/* Mini Tabs */}
-            <div className="flex gap-1 mb-4 border-b">
+            <div className="flex gap-1 mb-4 border-b overflow-x-auto">
               {[
                 { id: 'overview', label: 'Overview' },
                 { id: 'funding', label: 'Funding' },
                 { id: 'impact', label: 'Impact' },
-                { id: 'docs', label: 'Documents' }
+                { id: 'voting', label: `Voting (${application.votes?.filter((v: any) => v.vote).length || 0})` },
+                { id: 'notes', label: `Notes (${application.notes?.length || 0})` },
+                { id: 'docs', label: 'Documents' },
+                { id: 'history', label: 'History' }
               ].map(tab => (
                 <button
                   key={tab.id}
