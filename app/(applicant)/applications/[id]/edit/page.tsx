@@ -15,26 +15,37 @@ import { Loader2, Save, Send, AlertCircle } from 'lucide-react'
 export default function EditApplicationPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [application, setApplication] = useState<any>(null)
+  const [applicationId, setApplicationId] = useState<string>('')
 
   const form = useForm()
 
   useEffect(() => {
+    async function init() {
+      const resolvedParams = await params
+      setApplicationId(resolvedParams.id)
+    }
+    init()
+  }, [params])
+
+  useEffect(() => {
+    if (!applicationId) return
+
     async function loadApplication() {
       try {
-        const response = await fetch(`/api/applications/${params.id}`)
+        const response = await fetch(`/api/applications/${applicationId}`)
         if (response.ok) {
           const app = await response.json()
           
           if (app.status !== 'DRAFT') {
             toast.error('Can only edit draft applications')
-            router.push(`/applications/${params.id}`)
+            router.push(`/applications/${applicationId}`)
             return
           }
 
@@ -76,7 +87,7 @@ export default function EditApplicationPage({
     }
 
     loadApplication()
-  }, [params.id, form, router])
+  }, [applicationId, form, router])
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -93,8 +104,10 @@ export default function EditApplicationPage({
   }, [application, form])
 
   async function saveProgress(data: any) {
+    if (!applicationId) return
+    
     try {
-      await fetch(`/api/applications/${params.id}`, {
+      await fetch(`/api/applications/${applicationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -127,7 +140,7 @@ export default function EditApplicationPage({
       await saveProgress(form.getValues())
 
       // Submit application
-      const response = await fetch(`/api/applications/${params.id}/submit`, {
+      const response = await fetch(`/api/applications/${applicationId}/submit`, {
         method: 'POST',
       })
 
