@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from 'sonner'
-import { ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, MessageSquare, Circle, CheckCircle2, XCircle, Minus } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface Vote {
@@ -21,6 +21,12 @@ interface Vote {
   updatedAt: string
 }
 
+interface Reviewer {
+  id: string
+  name: string
+  email: string
+}
+
 interface VotingPanelProps {
   applicationId: string
   currentUserId: string
@@ -28,6 +34,7 @@ interface VotingPanelProps {
 
 export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) {
   const [votes, setVotes] = useState<Vote[]>([])
+  const [reviewers, setReviewers] = useState<Reviewer[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedVote, setSelectedVote] = useState<'APPROVE' | 'DECLINE' | ''>('')
@@ -39,8 +46,21 @@ export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) 
   const declineCount = votes.filter(v => v.vote === 'DECLINE').length
   const abstainCount = votes.filter(v => v.vote === 'ABSTAIN').length
 
+  // Create combined reviewer list with vote status
+  const reviewerVoteStatus = reviewers.map(reviewer => {
+    const vote = votes.find(v => v.reviewerId === reviewer.id)
+    return {
+      ...reviewer,
+      vote: vote?.vote || null,
+      reasoning: vote?.reasoning || null,
+      votedAt: vote?.createdAt || null
+    }
+  })
+
+  const votedCount = reviewerVoteStatus.filter(r => r.vote).length
+
   useEffect(() => {
-    loadVotes()
+    Promise.all([loadVotes(), loadReviewers()])
   }, [applicationId])
 
   async function loadVotes() {
@@ -54,6 +74,31 @@ export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) 
       console.error('Error loading votes:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadReviewers() {
+    try {
+      const response = await fetch('/api/admin/users')
+      if (response.ok) {
+        const data = await response.json()
+        // Map Clerk organization members to reviewer format
+        const reviewerList = data.map((member: any) => ({
+          id: member.publicUserData?.userId || member.id,
+          name: `${member.publicUserData?.firstName || ''} ${member.publicUserData?.lastName || ''}`.trim() || member.publicUserData?.identifier || 'Unknown',
+          email: member.publicUserData?.identifier || ''
+        }))
+        setReviewers(reviewerList)
+      }
+    } catch (error) {
+      console.error('Error loading reviewers:', error)
+      // Fallback: Use votes to show at least those who voted
+      const uniqueReviewers = votes.map(v => ({
+        id: v.reviewerId,
+        name: v.reviewerName,
+        email: ''
+      }))
+      setReviewers(uniqueReviewers)
     }
   }
 
@@ -182,57 +227,79 @@ export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) 
         </CardContent>
       </Card>
 
-      {/* Individual Votes */}
+      {/* All Reviewers - With Vote Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Individual Votes</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Board Votes</CardTitle>
+            <span className="text-sm text-gray-500">{votedCount} of {reviewers.length} cast</span>
+          </div>
         </CardHeader>
         <CardContent>
-          {votes.length === 0 ? (
-            <p className="text-center py-8 text-gray-500">No votes cast yet</p>
+          {reviewerVoteStatus.length === 0 ? (
+            <p className="text-center py-8 text-gray-500">Loading reviewers...</p>
           ) : (
-            <div className="space-y-3">
-              {votes.map(vote => (
+            <div className="space-y-2">
+              {reviewerVoteStatus.map(reviewer => (
                 <div
-                  key={vote.id}
-                  className={`flex items-start gap-3 p-4 rounded-lg border-2 ${
-                    vote.reviewerId === currentUserId
-                      ? 'border-[var(--hff-teal)] bg-[var(--hff-teal-50)]'
-                      : 'border-gray-200'
+                  key={reviewer.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    reviewer.id === currentUserId ? 'border-[var(--hff-teal)] bg-[var(--hff-teal-50)]' : 'border-gray-200'
                   }`}
                 >
-                  <Avatar>
-                    <AvatarFallback>{vote.reviewerName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="font-medium">{vote.reviewerName}</p>
-                      {vote.reviewerId === currentUserId && (
-                        <Badge variant="outline" className="text-xs">You</Badge>
+                  <div className="flex items-center gap-3 flex-1">
+                    {/* Vote Icon */}
+                    {reviewer.vote === 'APPROVE' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                    {reviewer.vote === 'DECLINE' && <XCircle className="h-5 w-5 text-red-600" />}
+                    {reviewer.vote === 'ABSTAIN' && <Minus className="h-5 w-5 text-gray-600" />}
+                    {!reviewer.vote && <Circle className="h-5 w-5 text-gray-300" />}
+                    
+                    {/* Reviewer Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{reviewer.name}</span>
+                        {reviewer.id === currentUserId && (
+                          <Badge variant="outline" className="text-xs">You</Badge>
+                        )}
+                      </div>
+                      {reviewer.reasoning && (
+                        <p className="text-xs text-gray-600 mt-1">{reviewer.reasoning}</p>
                       )}
+                      {reviewer.votedAt && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {formatDistanceToNow(new Date(reviewer.votedAt), { addSuffix: true })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Vote Badge or Status */}
+                  <div className="flex-shrink-0">
+                    {reviewer.vote ? (
                       <Badge
                         className={
-                          vote.vote === 'APPROVE'
+                          reviewer.vote === 'APPROVE'
                             ? 'bg-green-100 text-green-700'
-                            : vote.vote === 'DECLINE'
+                            : reviewer.vote === 'DECLINE'
                             ? 'bg-red-100 text-red-700'
                             : 'bg-gray-100 text-gray-700'
                         }
                       >
-                        {vote.vote}
+                        {reviewer.vote}
                       </Badge>
-                    </div>
-                    {vote.reasoning && (
-                      <p className="text-sm text-gray-700 mb-2">{vote.reasoning}</p>
+                    ) : (
+                      <span className="text-xs text-gray-400">Not voted</span>
                     )}
-                    <p className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(vote.createdAt), { addSuffix: true })}
-                    </p>
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          {/* Summary */}
+          <div className="mt-4 pt-4 border-t text-sm text-gray-600">
+            Summary: {approveCount} approve · {declineCount} decline · {abstainCount} abstain · {reviewers.length - votedCount} pending
+          </div>
         </CardContent>
       </Card>
     </div>
