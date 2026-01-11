@@ -11,8 +11,7 @@ import { Download, FileText } from 'lucide-react'
 import { formatFileSize } from '@/lib/storage'
 import { VotingPanel } from '@/components/reviewer/VotingPanel'
 import { NotesPanel } from '@/components/reviewer/NotesPanel'
-import { StatusChangeDialog } from '@/components/reviewer/StatusChangeDialog'
-import { InfoRequestDialog } from '@/components/reviewer/InfoRequestDialog'
+import { ApplicationActions } from '@/components/reviewer/ApplicationActions'
 import { isAdmin, isManager } from '@/lib/auth/access'
 
 export default async function ApplicationDetailPage({
@@ -85,25 +84,14 @@ export default async function ApplicationDetailPage({
           </div>
 
           {/* Manager Actions */}
-          <div className="flex gap-2">
-            {userIsAdmin && (
-              <StatusChangeDialog
-                applicationId={application.id}
-                currentStatus={application.status}
-                approveVotes={approveVotes}
-                declineVotes={declineVotes}
-                open={false}
-                onOpenChange={() => {}}
-              />
-            )}
-            {userIsManager && (
-              <InfoRequestDialog
-                applicationId={application.id}
-                open={false}
-                onOpenChange={() => {}}
-              />
-            )}
-          </div>
+          <ApplicationActions
+            applicationId={application.id}
+            currentStatus={application.status}
+            approveVotes={approveVotes}
+            declineVotes={declineVotes}
+            isAdmin={userIsAdmin}
+            isManager={userIsManager}
+          />
         </div>
 
         {/* Tabs */}
