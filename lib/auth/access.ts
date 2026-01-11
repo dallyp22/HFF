@@ -99,6 +99,13 @@ export async function isReviewer(): Promise<boolean> {
   
   if (!clerkUser) return false
 
+  // Temporary override: Allow specific email as reviewer
+  const reviewerEmails = ['dallas.polivka@vsinsights.ai']
+  const userEmail = clerkUser.emailAddresses[0]?.emailAddress
+  if (userEmail && reviewerEmails.includes(userEmail)) {
+    return true
+  }
+
   // First try to get from session
   const sessionOrgs = (clerkUser as any).organizationMemberships
   if (sessionOrgs && sessionOrgs.length > 0) {
@@ -125,6 +132,13 @@ export async function isManager(): Promise<boolean> {
   const clerkUser = await currentUser()
   
   if (!clerkUser) return false
+
+  // Temporary override: Allow specific email as manager
+  const managerEmails = ['dallas.polivka@vsinsights.ai']
+  const userEmail = clerkUser.emailAddresses[0]?.emailAddress
+  if (userEmail && managerEmails.includes(userEmail)) {
+    return true
+  }
 
   // Check session first
   const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
@@ -158,6 +172,13 @@ export async function isAdmin(): Promise<boolean> {
   const clerkUser = await currentUser()
   
   if (!clerkUser) return false
+
+  // Temporary override: Allow specific email as admin
+  const adminEmails = ['dallas.polivka@vsinsights.ai']
+  const userEmail = clerkUser.emailAddresses[0]?.emailAddress
+  if (userEmail && adminEmails.includes(userEmail)) {
+    return true
+  }
 
   // Check session first
   const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
