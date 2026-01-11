@@ -1,4 +1,7 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher, currentUser } from '@clerk/nextjs/server'
+
+// Temporary admin override emails
+const ADMIN_EMAILS = ['dallas.polivka@vsinsights.ai']
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -39,24 +42,29 @@ export default clerkMiddleware(async (auth, req) => {
       return Response.redirect(signInUrl)
     }
     
-    // Admin routes - require admin role
+    // Get current user to check email for admin override
+    const user = await currentUser()
+    const userEmail = user?.emailAddresses?.[0]?.emailAddress
+    const isHardcodedAdmin = userEmail && ADMIN_EMAILS.includes(userEmail)
+    
+    // Admin routes - require admin role OR hardcoded admin email
     if (isAdminRoute(req)) {
-      if (orgRole !== 'org:admin') {
+      if (!isHardcodedAdmin && orgRole !== 'org:admin') {
         return Response.redirect(new URL('/reviewer/dashboard', req.url))
       }
     }
     
-    // Reviewer routes - require organization membership
+    // Reviewer routes - require organization membership OR hardcoded admin
     if (isReviewerRoute(req)) {
-      if (!orgRole) {
+      if (!isHardcodedAdmin && !orgRole) {
         return Response.redirect(new URL('/dashboard', req.url))
       }
     }
     
     // Applicant routes - accessible to authenticated non-org users
     if (isApplicantRoute(req)) {
-      if (orgRole) {
-        // Staff members redirect to reviewer dashboard
+      if (orgRole || isHardcodedAdmin) {
+        // Staff members and hardcoded admins redirect to reviewer dashboard
         return Response.redirect(new URL('/reviewer/dashboard', req.url))
       }
     }
