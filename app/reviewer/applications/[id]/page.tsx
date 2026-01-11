@@ -84,14 +84,30 @@ export default async function ApplicationDetailPage({
           </div>
 
           {/* Manager Actions */}
-          <ApplicationActions
-            applicationId={application.id}
-            currentStatus={application.status}
-            approveVotes={approveVotes}
-            declineVotes={declineVotes}
-            isAdmin={userIsAdmin}
-            isManager={userIsManager}
-          />
+          <div className="space-y-2">
+            {/* Debug role indicator */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-500">
+                Role: {userIsAdmin ? 'Admin' : userIsManager ? 'Manager' : 'Reviewer'}
+              </div>
+            )}
+            
+            <ApplicationActions
+              applicationId={application.id}
+              currentStatus={application.status}
+              approveVotes={approveVotes}
+              declineVotes={declineVotes}
+              isAdmin={userIsAdmin}
+              isManager={userIsManager}
+            />
+            
+            {/* Show message if no actions available */}
+            {!userIsAdmin && !userIsManager && (
+              <p className="text-sm text-gray-500">
+                Only managers and admins can change application status
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}

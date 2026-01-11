@@ -26,12 +26,12 @@ export function ApplicationActions({
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       {isAdmin && (
         <>
           <Button
-            variant="outline"
             onClick={() => setStatusDialogOpen(true)}
+            className="bg-[var(--hff-teal)] hover:bg-[var(--hff-teal-dark)] text-white"
           >
             Change Status
           </Button>
@@ -46,7 +46,24 @@ export function ApplicationActions({
         </>
       )}
 
-      {isManager && (
+      {isManager && !isAdmin && (
+        <>
+          <Button
+            variant="outline"
+            onClick={() => setInfoDialogOpen(true)}
+          >
+            Request Information
+          </Button>
+          <InfoRequestDialog
+            applicationId={applicationId}
+            open={infoDialogOpen}
+            onOpenChange={setInfoDialogOpen}
+          />
+        </>
+      )}
+      
+      {/* Show info button for admins too */}
+      {isAdmin && (
         <>
           <Button
             variant="outline"
