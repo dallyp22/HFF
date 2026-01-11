@@ -115,8 +115,8 @@ export default async function ApplicationsPage() {
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/applications/${app.id}`}>
-                          {app.status === 'DRAFT' ? 'Continue' : 'View'}
+                        <Link href={app.status === 'DRAFT' ? `/applications/${app.id}/edit` : `/applications/${app.id}`}>
+                          {app.status === 'DRAFT' ? 'Continue Editing' : 'View Status'}
                         </Link>
                       </Button>
                       {app.status === 'DRAFT' && (
