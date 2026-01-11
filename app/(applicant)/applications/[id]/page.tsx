@@ -3,13 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
-import { AlertCircle, FileText } from 'lucide-react'
+import { InfoResponseForm } from '@/components/applicant/InfoResponseForm'
 
 export default async function ApplicationStatusPage({
   params,
@@ -128,65 +125,12 @@ export default async function ApplicationStatusPage({
 
         {/* Information Request */}
         {pendingInfoRequest && (
-          <Alert className="mb-6 border-amber-200 bg-amber-50">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription>
-              <p className="font-medium text-amber-900 mb-2">Action Required</p>
-              <p className="text-amber-800 mb-4">
-                The foundation has requested additional information:
-              </p>
-              <Card className="bg-white">
-                <CardContent className="pt-4">
-                  <p className="text-gray-700 whitespace-pre-wrap mb-4">
-                    {pendingInfoRequest.content}
-                  </p>
-                  {pendingInfoRequest.responseDeadline && (
-                    <p className="text-sm text-gray-600">
-                      Response due: {format(new Date(pendingInfoRequest.responseDeadline), 'MMMM d, yyyy')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <form
-                action={async (formData: FormData) => {
-                  'use server'
-                  const response = formData.get('response') as string
-                  
-                  if (!response) return
-                  
-                  const result = await fetch(
-                    `${process.env.NEXT_PUBLIC_APP_URL}/api/applications/${id}/respond`,
-                    {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        communicationId: pendingInfoRequest.id,
-                        response,
-                      }),
-                    }
-                  )
-                  
-                  if (result.ok) {
-                    // Redirect will happen automatically
-                  }
-                }}
-                className="mt-4 space-y-3"
-              >
-                <Label htmlFor="response">Your Response</Label>
-                <Textarea
-                  id="response"
-                  name="response"
-                  placeholder="Enter your response here..."
-                  rows={5}
-                  required
-                />
-                <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
-                  Submit Response
-                </Button>
-              </form>
-            </AlertDescription>
-          </Alert>
+          <InfoResponseForm
+            applicationId={id}
+            communicationId={pendingInfoRequest.id}
+            message={pendingInfoRequest.content}
+            responseDeadline={pendingInfoRequest.responseDeadline?.toString() || null}
+          />
         )}
 
         {/* Status History */}
