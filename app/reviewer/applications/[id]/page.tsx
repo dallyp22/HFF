@@ -196,6 +196,7 @@ export default async function ApplicationDetailPage({
           {/* Application Tab */}
           <TabsContent value="application">
             <div className="space-y-6">
+              {/* Project Overview */}
               <Card>
                 <CardHeader>
                   <CardTitle>Project Overview</CardTitle>
@@ -203,62 +204,181 @@ export default async function ApplicationDetailPage({
                 <CardContent className="space-y-4">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Project Title</p>
-                    <p className="text-lg">{application.projectTitle}</p>
+                    <p className="text-lg font-semibold">{application.projectTitle || 'Not specified'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600">Description</p>
-                    <p className="text-gray-700">{application.projectDescription}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{application.projectDescription || 'Not specified'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600">Goals</p>
-                    <p className="text-gray-700">{application.projectGoals}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{application.projectGoals || 'Not specified'}</p>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Project Timeline */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Timeline</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {application.projectStartDate && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Start Date</p>
+                        <p>{format(new Date(application.projectStartDate), 'MMMM d, yyyy')}</p>
+                      </div>
+                    )}
+                    {application.projectEndDate && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">End Date</p>
+                        <p>{format(new Date(application.projectEndDate), 'MMMM d, yyyy')}</p>
+                      </div>
+                    )}
+                  </div>
+                  {application.geographicArea && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Geographic Area Served</p>
+                      <p className="text-gray-700">{application.geographicArea}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Funding Request */}
               <Card>
                 <CardHeader>
                   <CardTitle>Funding Request</CardTitle>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Amount Requested</p>
-                    <p className="text-2xl font-bold text-[var(--hff-teal)]">
-                      ${application.amountRequested?.toLocaleString() || '0'}
-                    </p>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Amount Requested</p>
+                      <p className="text-2xl font-bold text-[var(--hff-teal)]">
+                        ${application.amountRequested?.toLocaleString() || '0'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Project Budget</p>
+                      <p className="text-xl font-semibold">${application.totalProjectBudget?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Percentage Requested</p>
+                      <p className="text-xl font-semibold">{application.percentageRequested?.toFixed(1) || '0'}%</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Project Budget</p>
-                    <p className="text-lg">${application.totalProjectBudget?.toLocaleString() || '0'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Percentage Requested</p>
-                    <p className="text-lg">{application.percentageRequested?.toFixed(1) || '0'}%</p>
-                  </div>
+                  
+                  {application.otherFundingSources && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Other Funding Sources</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.otherFundingSources}</p>
+                    </div>
+                  )}
+                  
+                  {application.previousHFFGrants && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Previous HFF Grants</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.previousHFFGrants}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
+              {/* Target Population */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Target Population</CardTitle>
+                  <CardTitle>Target Population & Impact</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Children Served</p>
-                    <p className="text-lg font-semibold">{application.childrenServed || 'Not specified'}</p>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {application.childrenServed && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Children Served</p>
+                        <p className="text-2xl font-bold">{application.childrenServed}</p>
+                      </div>
+                    )}
+                    {application.beneficiariesCount && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Beneficiaries</p>
+                        <p className="text-2xl font-bold">{application.beneficiariesCount}</p>
+                      </div>
+                    )}
+                    {application.ageRangeStart && application.ageRangeEnd && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Age Range</p>
+                        <p className="text-xl font-semibold">{application.ageRangeStart} - {application.ageRangeEnd} years</p>
+                      </div>
+                    )}
                   </div>
-                  {application.ageRangeStart && application.ageRangeEnd && (
+                  
+                  {application.targetPopulation && (
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Age Range</p>
-                      <p>{application.ageRangeStart} - {application.ageRangeEnd} years</p>
+                      <p className="text-sm font-medium text-gray-600">Target Population Description</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.targetPopulation}</p>
                     </div>
                   )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Poverty Indicators</p>
-                    <p className="text-gray-700">{application.povertyIndicators}</p>
-                  </div>
+                  
+                  {application.povertyIndicators && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Poverty Indicators</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.povertyIndicators}</p>
+                    </div>
+                  )}
+                  
+                  {application.schoolsServed && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Schools Served</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.schoolsServed}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Outcomes & Measurement */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expected Outcomes & Impact</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {application.expectedOutcomes && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Expected Outcomes</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.expectedOutcomes}</p>
+                    </div>
+                  )}
+                  
+                  {application.measurementPlan && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Measurement Plan</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.measurementPlan}</p>
+                    </div>
+                  )}
+                  
+                  {application.sustainabilityPlan && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Sustainability Plan</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{application.sustainabilityPlan}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Budget Breakdown */}
+              {application.budgetBreakdown && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Budget Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {typeof application.budgetBreakdown === 'string' 
+                        ? application.budgetBreakdown 
+                        : JSON.stringify(application.budgetBreakdown, null, 2)}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
