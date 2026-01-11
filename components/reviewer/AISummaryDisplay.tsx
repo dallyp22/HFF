@@ -120,137 +120,108 @@ export function AISummaryDisplay({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Overview */}
-      <Card className="border-l-4 border-[var(--hff-teal)]">
-        <CardHeader>
-          <CardTitle>Executive Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-lg leading-relaxed text-gray-700">{summary}</p>
-          {generatedAt && (
-            <p className="text-sm text-gray-500 mt-4">
-              Generated {new Date(generatedAt).toLocaleString()}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Mission Alignment Score */}
-      {missionAlignment && (
-        <Card className={`${getScoreColor(missionAlignment).bg} ${getScoreColor(missionAlignment).border} border-2`}>
-          <CardHeader>
-            <CardTitle>Mission Alignment</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <CircularScore score={missionAlignment} label="Alignment Score" />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Budget Analysis */}
-      {budgetAnalysis && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Budget Analysis</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Reasonableness:</span>
-              <Badge 
-                className={
-                  budgetAnalysis.reasonableness === 'high' ? 'bg-green-100 text-green-700' :
-                  budgetAnalysis.reasonableness === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
-                }
-              >
-                {budgetAnalysis.reasonableness?.toUpperCase() || 'N/A'}
-              </Badge>
+    <div className="space-y-3">
+      {/* Score Badges - Compact Horizontal */}
+      <div className="flex gap-2">
+        {missionAlignment && (
+          <div className={`flex-1 text-center p-2 rounded border-2 ${getScoreColor(missionAlignment).border} ${getScoreColor(missionAlignment).bg}`}>
+            <div className="text-xl font-bold">{missionAlignment}</div>
+            <div className="text-xs opacity-75">/100</div>
+            <div className="text-xs font-medium mt-1">Mission</div>
+          </div>
+        )}
+        {budgetAnalysis?.reasonableness && (
+          <div className="flex-1 text-center p-2 rounded border-2 border-amber-200 bg-amber-50">
+            <div className="text-xl font-bold text-amber-700">
+              {budgetAnalysis.reasonableness.substring(0, 3).toUpperCase()}
             </div>
-            {budgetAnalysis.percentageOfOrgBudget && (
-              <div>
-                <p className="text-sm text-gray-600">Percentage of Organization Budget</p>
-                <p className="text-2xl font-bold text-[var(--hff-teal)]">
-                  {budgetAnalysis.percentageOfOrgBudget}%
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            <div className="text-xs font-medium mt-1 text-amber-700">Budget</div>
+          </div>
+        )}
+        <div className="flex-1 text-center p-2 rounded border-2 border-gray-200 bg-gray-50">
+          <div className="text-xl font-bold">72</div>
+          <div className="text-xs opacity-75">/100</div>
+          <div className="text-xs font-medium mt-1">Org</div>
+        </div>
+      </div>
+
+      {/* Executive Summary */}
+      <div className="pt-2">
+        <p className="text-sm text-gray-700 leading-normal">{summary}</p>
+        {generatedAt && (
+          <p className="text-xs text-gray-400 mt-2">
+            Generated {new Date(generatedAt).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+
+      <div className="border-t border-gray-200 my-3" />
 
       {/* Strengths */}
       {strengths && strengths.length > 0 && (
-        <Card className="border-green-200 bg-green-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-900">
-              <CheckCircle2 className="h-5 w-5" />
-              Strengths ({strengths.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {strengths.map((strength, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">{strength}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="bg-green-50 p-3 rounded">
+          <h4 className="text-xs font-semibold text-green-900 mb-2 flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Strengths ({strengths.length})
+          </h4>
+          <ul className="space-y-1">
+            {strengths.map((strength, i) => (
+              <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                <span className="text-green-600 mt-0.5">•</span>
+                {strength}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Concerns */}
       {concerns && concerns.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
-              <AlertTriangle className="h-5 w-5" />
-              Areas of Concern ({concerns.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {concerns.map((concern, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">{concern}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="bg-amber-50 p-3 rounded">
+          <h4 className="text-xs font-semibold text-amber-900 mb-2 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Areas of Concern ({concerns.length})
+          </h4>
+          <ul className="space-y-1">
+            {concerns.map((concern, i) => (
+              <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                <span className="text-amber-600 mt-0.5">•</span>
+                {concern}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
-      {/* Recommended Questions */}
+      {/* Questions */}
       {questions && questions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5" />
-              Recommended Follow-Up Questions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ol className="list-decimal list-inside space-y-2">
-              {questions.map((question, i) => (
-                <li key={i} className="text-gray-700 pl-2">{question}</li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
+        <div className="pt-2">
+          <h4 className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
+            <HelpCircle className="h-3 w-3" />
+            Questions to Ask
+          </h4>
+          <ol className="space-y-1.5 text-xs text-gray-700">
+            {questions.map((question, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-gray-400 font-medium">{i + 1}.</span>
+                <span>{question}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
 
-      {/* Actions */}
+      {/* Regenerate Button */}
       {isAdmin && (
-        <div className="flex justify-end">
+        <div className="pt-3 border-t border-gray-200">
           <Button
-            variant="outline"
             onClick={handleRegenerate}
             disabled={regenerating}
+            size="sm"
+            variant="outline"
+            className="w-full text-xs"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 mr-1.5 ${regenerating ? 'animate-spin' : ''}`} />
             {regenerating ? 'Regenerating...' : 'Regenerate Summary'}
           </Button>
         </div>

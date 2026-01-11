@@ -35,8 +35,8 @@ export function ApplicationDetailView({
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Sub-header */}
-      <div className="bg-white border-b px-6 py-4">
+      {/* Sub-header with Actions */}
+      <div className="bg-white border-b px-6 py-3">
         <Link href="/reviewer/applications" className="text-sm text-gray-500 hover:text-gray-700 mb-2 inline-block">
           ← Back to Applications
         </Link>
@@ -53,19 +53,33 @@ export function ApplicationDetailView({
               <span className="font-medium">
                 ${application.amountRequested ? Math.round(parseFloat(application.amountRequested.toString())).toLocaleString() : '0'} requested
               </span>
+              <span>·</span>
+              <Badge className={statusColors[application.status]}>
+                {application.status.replace(/_/g, ' ')}
+              </Badge>
             </div>
           </div>
-          <Badge className={statusColors[application.status]}>
-            {application.status.replace(/_/g, ' ')}
-          </Badge>
+          {userIsAdmin && (
+            <div className="flex gap-2">
+              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                ✓ Approve
+              </Button>
+              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                ✗ Decline
+              </Button>
+              <Button size="sm" variant="outline">
+                Request Information
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Split Panel */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel - AI Analysis */}
-        <div className="w-96 bg-gray-50 border-r overflow-y-auto p-5">
-          <h2 className="section-title mb-4">AI Analysis</h2>
+        <div className="w-80 bg-gray-50 border-r overflow-y-auto p-4">
+          <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">AI Analysis</h2>
           
           <AISummaryDisplay
             summary={application.aiSummary}
@@ -82,9 +96,9 @@ export function ApplicationDetailView({
 
         {/* Right Panel - Application Details */}
         <div className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-4">
             {/* Mini Tabs */}
-            <div className="flex gap-1 mb-5 border-b">
+            <div className="flex gap-1 mb-4 border-b">
               {[
                 { id: 'overview', label: 'Overview' },
                 { id: 'funding', label: 'Funding' },
@@ -107,10 +121,10 @@ export function ApplicationDetailView({
 
             {/* Overview Tab */}
             {activeTab === 'overview' && (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <section>
-                  <h3 className="section-title mb-2">Project Overview</h3>
-                  <div className="bg-white rounded-lg border p-4">
+                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Project Overview</h3>
+                  <div className="bg-white rounded-lg border p-3">
                     <p className="text-sm text-gray-700 mb-3">
                       {application.projectDescription || 'No description provided'}
                     </p>
@@ -121,8 +135,8 @@ export function ApplicationDetailView({
                 </section>
 
                 <section>
-                  <h3 className="section-title mb-2">Timeline & Location</h3>
-                  <div className="bg-white rounded-lg border p-4 grid grid-cols-3 gap-4">
+                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Timeline & Location</h3>
+                  <div className="bg-white rounded-lg border p-3 grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-xs text-gray-500">Start</p>
                       <p className="text-sm font-medium">
@@ -143,8 +157,8 @@ export function ApplicationDetailView({
                 </section>
 
                 <section>
-                  <h3 className="section-title mb-2">Organization</h3>
-                  <div className="bg-white rounded-lg border p-4">
+                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Organization</h3>
+                  <div className="bg-white rounded-lg border p-3">
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="text-xs text-gray-500">Annual Budget</p>
@@ -178,7 +192,7 @@ export function ApplicationDetailView({
 
             {/* Funding Tab */}
             {activeTab === 'funding' && (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <section>
                   <h3 className="section-title mb-2">Funding Request</h3>
                   <div className="bg-white rounded-lg border p-4">
@@ -225,7 +239,7 @@ export function ApplicationDetailView({
 
             {/* Impact Tab */}
             {activeTab === 'impact' && (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <section>
                   <h3 className="section-title mb-2">Target Population</h3>
                   <div className="bg-white rounded-lg border p-4">
@@ -293,35 +307,16 @@ export function ApplicationDetailView({
             )}
           </div>
 
-          {/* Sticky Action Bar */}
-          <div className="border-t bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-3">
-                <Button 
-                  size="lg"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  ✓ Approve
-                </Button>
-                <Button 
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  ✗ Decline
-                </Button>
-                <Button size="lg" variant="outline">
-                  Request Information
-                </Button>
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>Notes ({application.notes?.length || 0})</span>
-                <span>·</span>
-                <span>Votes ({application.votes?.filter((v: any) => v.vote).length || 0}/{application.votes?.length || 0})</span>
-                <Button variant="ghost" size="sm" className="text-[var(--hff-teal)]">
-                  + Add Note
-                </Button>
-              </div>
+          {/* Info Bar */}
+          <div className="border-t bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <span>Notes ({application.notes?.length || 0})</span>
+              <span>·</span>
+              <span>Votes ({application.votes?.filter((v: any) => v.vote).length || 0}/{application.votes?.length || 0})</span>
+              <span>·</span>
+              <Button variant="ghost" size="sm" className="text-[var(--hff-teal)] h-6 text-xs">
+                + Add Note
+              </Button>
             </div>
           </div>
         </div>
