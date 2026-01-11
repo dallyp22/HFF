@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs/server'
+import { currentUser, clerkClient } from '@clerk/nextjs/server'
 
 /**
  * Check if the current user can access an application
@@ -99,7 +99,23 @@ export async function isReviewer(): Promise<boolean> {
   
   if (!clerkUser) return false
 
-  return !!((clerkUser as any).organizationMemberships && (clerkUser as any).organizationMemberships.length > 0)
+  // First try to get from session
+  const sessionOrgs = (clerkUser as any).organizationMemberships
+  if (sessionOrgs && sessionOrgs.length > 0) {
+    return true
+  }
+
+  // Fallback: Check via Clerk API
+  try {
+    const client = await clerkClient()
+    const orgMemberships = await client.users.getOrganizationMembershipList({
+      userId: clerkUser.id,
+    })
+    return orgMemberships.data.length > 0
+  } catch (error) {
+    console.error('Error checking org membership:', error)
+    return false
+  }
 }
 
 /**
@@ -110,8 +126,29 @@ export async function isManager(): Promise<boolean> {
   
   if (!clerkUser) return false
 
+  // Check session first
   const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
-  return orgRole === 'org:manager' || orgRole === 'org:admin'
+  if (orgRole === 'org:manager' || orgRole === 'org:admin') {
+    return true
+  }
+
+  // Fallback: Check via Clerk API
+  try {
+    const client = await clerkClient()
+    const orgMemberships = await client.users.getOrganizationMembershipList({
+      userId: clerkUser.id,
+    })
+    
+    if (orgMemberships.data.length > 0) {
+      const role = orgMemberships.data[0].role
+      return role === 'org:manager' || role === 'org:admin'
+    }
+    
+    return false
+  } catch (error) {
+    console.error('Error checking manager access:', error)
+    return false
+  }
 }
 
 /**
@@ -122,6 +159,27 @@ export async function isAdmin(): Promise<boolean> {
   
   if (!clerkUser) return false
 
+  // Check session first
   const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
-  return orgRole === 'org:admin'
+  if (orgRole === 'org:admin') {
+    return true
+  }
+
+  // Fallback: Check via Clerk API
+  try {
+    const client = await clerkClient()
+    const orgMemberships = await client.users.getOrganizationMembershipList({
+      userId: clerkUser.id,
+    })
+    
+    if (orgMemberships.data.length > 0) {
+      const role = orgMemberships.data[0].role
+      return role === 'org:admin'
+    }
+    
+    return false
+  } catch (error) {
+    console.error('Error checking admin access:', error)
+    return false
+  }
 }
