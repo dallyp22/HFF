@@ -9,6 +9,9 @@ import { format } from 'date-fns'
 import { Download, FileText } from 'lucide-react'
 import { formatFileSize } from '@/lib/storage'
 import { AISummaryDisplay } from '@/components/reviewer/AISummaryDisplay'
+import { StatusChangeDialog } from '@/components/reviewer/StatusChangeDialog'
+import { InfoRequestDialog } from '@/components/reviewer/InfoRequestDialog'
+import { useRouter } from 'next/navigation'
 
 interface ApplicationDetailViewProps {
   application: any
@@ -21,7 +24,28 @@ export function ApplicationDetailView({
   userIsAdmin,
   userIsManager
 }: ApplicationDetailViewProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  
+  const approveVotes = application.votes?.filter((v: any) => v.vote === 'APPROVE').length || 0
+  const declineVotes = application.votes?.filter((v: any) => v.vote === 'DECLINE').length || 0
+
+  function handleApprove() {
+    setSelectedStatus('APPROVED')
+    setStatusDialogOpen(true)
+  }
+
+  function handleDecline() {
+    setSelectedStatus('DECLINED')
+    setStatusDialogOpen(true)
+  }
+
+  function handleRequestInfo() {
+    setInfoDialogOpen(true)
+  }
 
   const statusColors: Record<string, string> = {
     DRAFT: 'bg-gray-100 text-gray-700',
@@ -61,13 +85,25 @@ export function ApplicationDetailView({
           </div>
           {userIsAdmin && (
             <div className="flex gap-2">
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+              <Button 
+                size="sm" 
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleApprove}
+              >
                 ✓ Approve
               </Button>
-              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+              <Button 
+                size="sm" 
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleDecline}
+              >
                 ✗ Decline
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={handleRequestInfo}
+              >
                 Request Information
               </Button>
             </div>
@@ -321,6 +357,22 @@ export function ApplicationDetailView({
           </div>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <StatusChangeDialog
+        applicationId={application.id}
+        currentStatus={application.status}
+        approveVotes={approveVotes}
+        declineVotes={declineVotes}
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+      />
+
+      <InfoRequestDialog
+        applicationId={application.id}
+        open={infoDialogOpen}
+        onOpenChange={setInfoDialogOpen}
+      />
     </div>
   )
 }
