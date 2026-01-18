@@ -1,11 +1,46 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/brand/Header'
 import { Footer } from '@/components/brand/Footer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Calendar, Heart, MapPin, Users } from 'lucide-react'
+import { Calendar, Heart, MapPin, Users, Loader2 } from 'lucide-react'
 
 export default function HomePage() {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoaded) return
+    
+    if (user) {
+      // Check if user is a reviewer
+      const isReviewer = (user as any).organizationMemberships?.length > 0
+      const isHardcodedAdmin = user.emailAddresses?.[0]?.emailAddress === 'dallas.polivka@vsinsights.ai'
+      
+      if (isReviewer || isHardcodedAdmin) {
+        router.push('/reviewer/dashboard')
+      } else {
+        router.push('/dashboard')
+      }
+    }
+  }, [user, isLoaded, router])
+
+  // Show loading while checking auth
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--hff-teal)]" />
+      </div>
+    )
+  }
+
+  // If user is signed in, they'll be redirected by useEffect
+  // This content only shows for non-authenticated users
   return (
     <div className="flex min-h-screen flex-col">
       <Header variant="public" />
