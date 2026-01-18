@@ -36,9 +36,7 @@ import { toast } from 'sonner'
 
 const inviteSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  role: z.enum(['Admin', 'Manager', 'Member'], {
-    required_error: 'Please select a role',
-  }),
+  role: z.enum(['Admin', 'Manager', 'Member']),
   message: z.string().optional(),
 })
 
