@@ -71,7 +71,7 @@ export function Header({ variant = 'public' }: HeaderProps) {
               {(isReviewer && (user as any).organizationMemberships?.[0]?.role === 'org:admin') || 
                (user?.emailAddresses?.[0]?.emailAddress === 'dallas.polivka@vsinsights.ai') ? (
                 <Link 
-                  href="/reviewer/admin/cycles" 
+                  href="/reviewer/admin" 
                   className="text-sm font-medium text-gray-700 hover:text-[var(--hff-teal)] transition-colors"
                 >
                   Admin
