@@ -110,5 +110,24 @@ export async function POST(req: Request) {
     }
   }
 
+  // Organization Membership Events
+  if (eventType === 'organizationMembership.created') {
+    console.log('Organization membership created:', evt.data)
+    // Clerk handles this in the user session
+    // No database action needed - membership is in user.organizationMemberships
+  }
+
+  if (eventType === 'organizationMembership.updated') {
+    console.log('Organization membership updated:', evt.data)
+    // Clerk handles this in the user session
+    // User needs to log out and log back in to see updated role
+  }
+
+  if (eventType === 'organizationMembership.deleted') {
+    console.log('Organization membership deleted:', evt.data)
+    // Clerk handles this in the user session
+    // User will lose access on next session refresh
+  }
+
   return NextResponse.json({ received: true })
 }
