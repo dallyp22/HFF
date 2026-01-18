@@ -346,6 +346,29 @@ Heistand Family Foundation`,
 
   console.log('Created sample organizations and applications')
 
+  // Create Foundation Settings
+  const foundationSettings = await prisma.foundationSettings.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      foundationName: 'Heistand Family Foundation',
+      tagline: 'Encouraging opportunities for children in poverty',
+      missionStatement: 'To encourage and multiply opportunities for children in poverty in the Omaha/Council Bluffs metro area and Western Iowa.',
+      visionStatement: 'A community where every child has access to the resources and support they need to thrive.',
+      primaryEmail: 'grants@heistandfamilyfoundation.org',
+      phoneNumber: '(402) 555-0100',
+      websiteUrl: 'https://heistandfamilyfoundation.org',
+      streetAddress: '123 Foundation Way',
+      city: 'Omaha',
+      state: 'NE',
+      zipCode: '68102',
+      focusAreas: ['Children in Poverty', 'Education', 'Community Development'],
+    },
+  })
+
+  console.log('Created foundation settings:', foundationSettings)
+
   console.log('Seeding complete!')
 }
 

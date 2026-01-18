@@ -395,3 +395,40 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
 }
+
+model FoundationSettings {
+  id                    String   @id @default(cuid())
+  
+  // Foundation Identity
+  foundationName        String
+  tagline               String?
+  
+  // Mission & Purpose
+  missionStatement      String   @db.Text
+  visionStatement       String?  @db.Text
+  focusAreas            String[] @default([])
+  
+  // Contact Information
+  primaryEmail          String
+  phoneNumber           String
+  websiteUrl            String?
+  
+  // Physical Address
+  streetAddress         String
+  addressLine2          String?
+  city                  String
+  state                 String
+  zipCode               String
+  
+  // Social Media (optional)
+  facebookUrl           String?
+  twitterUrl            String?
+  linkedinUrl           String?
+  
+  // Settings Metadata
+  updatedAt             DateTime @updatedAt
+  updatedById           String?  // Clerk user ID
+  updatedByName         String?
+  
+  @@index([id])
+}
