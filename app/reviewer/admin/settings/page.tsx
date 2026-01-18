@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { GlassCard } from '@/components/glass/GlassCard'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Settings, 
-  Building2, 
-  Mail, 
-  Phone, 
-  Globe, 
+import { FadeIn } from '@/components/motion/FadeIn'
+import { motion } from 'framer-motion'
+import {
+  Settings,
+  Building2,
+  Mail,
+  Phone,
+  Globe,
   MapPin,
   Edit,
   Loader2,
@@ -18,9 +19,13 @@ import {
   Facebook,
   Twitter,
   Linkedin,
+  ArrowLeft,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react'
 import { EditSettingsDialog } from '@/components/admin/EditSettingsDialog'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 interface FoundationSettings {
   id: string
@@ -72,8 +77,10 @@ export default function FoundationSettingsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-48 bg-gray-200 rounded" />
+            <div className="h-40 bg-gray-100 rounded-xl" />
+            <div className="h-40 bg-gray-100 rounded-xl" />
           </div>
         </div>
       </div>
@@ -84,12 +91,15 @@ export default function FoundationSettingsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Settings className="h-16 w-16 text-gray-300 mb-4" />
-              <p className="text-gray-600">Settings not found</p>
-            </CardContent>
-          </Card>
+          <FadeIn>
+            <GlassCard className="py-16 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
+                <Settings className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Settings Not Found</h3>
+              <p className="text-gray-500">Foundation settings have not been configured.</p>
+            </GlassCard>
+          </FadeIn>
         </div>
       </div>
     )
@@ -98,199 +108,250 @@ export default function FoundationSettingsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Foundation Settings</h1>
-            <p className="text-gray-600">
-              Manage foundation information and contact details
-            </p>
+        {/* Header */}
+        <FadeIn>
+          <Link
+            href="/reviewer/admin"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Admin
+          </Link>
+
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[var(--hff-slate)]/10">
+                <Settings className="w-6 h-6 text-[var(--hff-slate)]" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Foundation Settings</h1>
+                <p className="text-gray-600">Manage foundation information and contact details</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setEditDialogOpen(true)}
+              className="gap-2 bg-[var(--hff-teal)] hover:bg-[var(--hff-teal)]/90"
+            >
+              <Edit className="w-4 h-4" />
+              Edit Settings
+            </Button>
           </div>
-          <Button onClick={() => setEditDialogOpen(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Settings
-          </Button>
-        </div>
+        </FadeIn>
 
         <div className="space-y-6">
           {/* Foundation Identity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-[var(--hff-teal)]" />
-                Foundation Identity
-              </CardTitle>
-              <CardDescription>Basic information about the foundation</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">Foundation Name</label>
-                <p className="text-lg font-semibold">{settings.foundationName}</p>
-              </div>
-              {settings.tagline && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Tagline</label>
-                  <p className="text-gray-900">{settings.tagline}</p>
+          <FadeIn delay={0.1}>
+            <GlassCard className="p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--hff-teal)]/5 rounded-full -mr-12 -mt-12" />
+              <div className="relative">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                  <Building2 className="w-5 h-5 text-[var(--hff-teal)]" />
+                  Foundation Identity
+                </h2>
+
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-[var(--hff-teal)]/5 to-[var(--hff-teal)]/10 border border-[var(--hff-teal)]/20">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Foundation Name</p>
+                    <p className="text-2xl font-bold text-gray-900">{settings.foundationName}</p>
+                  </div>
+                  {settings.tagline && (
+                    <div className="p-4 rounded-xl bg-gray-50">
+                      <p className="text-sm font-medium text-gray-500 mb-1">Tagline</p>
+                      <p className="text-gray-900 italic">&ldquo;{settings.tagline}&rdquo;</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </GlassCard>
+          </FadeIn>
 
           {/* Mission & Vision */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-[var(--hff-teal)]" />
+          <FadeIn delay={0.15}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <Target className="w-5 h-5 text-[var(--hff-teal)]" />
                 Mission & Vision
-              </CardTitle>
-              <CardDescription>Foundation purpose and goals</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">Mission Statement</label>
-                <p className="text-gray-900 mt-1">{settings.missionStatement}</p>
-              </div>
-              {settings.visionStatement && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Vision Statement</label>
-                  <p className="text-gray-900 mt-1">{settings.visionStatement}</p>
+              </h2>
+
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-gray-50">
+                  <p className="text-sm font-medium text-gray-500 mb-2">Mission Statement</p>
+                  <p className="text-gray-700 leading-relaxed">{settings.missionStatement}</p>
                 </div>
-              )}
-              {settings.focusAreas.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 mb-2 block">Focus Areas</label>
-                  <div className="flex flex-wrap gap-2">
-                    {settings.focusAreas.map((area, index) => (
-                      <Badge key={index} variant="outline" className="bg-[var(--hff-teal-50)] text-[var(--hff-teal)]">
-                        {area}
-                      </Badge>
-                    ))}
+
+                {settings.visionStatement && (
+                  <div className="p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm font-medium text-gray-500 mb-2">Vision Statement</p>
+                    <p className="text-gray-700 leading-relaxed">{settings.visionStatement}</p>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+
+                {settings.focusAreas.length > 0 && (
+                  <div className="pt-4">
+                    <p className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Focus Areas
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {settings.focusAreas.map((area, index) => (
+                        <motion.span
+                          key={index}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="px-4 py-2 rounded-full text-sm font-medium bg-[var(--hff-teal)]/10 text-[var(--hff-teal)] border border-[var(--hff-teal)]/20"
+                        >
+                          {area}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+          </FadeIn>
 
           {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="h-5 w-5 text-[var(--hff-teal)]" />
+          <FadeIn delay={0.2}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <Heart className="w-5 h-5 text-[var(--hff-teal)]" />
                 Contact Information
-              </CardTitle>
-              <CardDescription>Primary contact details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-gray-500" />
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Email</label>
-                  <p className="text-gray-900">{settings.primaryEmail}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Phone</label>
-                  <p className="text-gray-900">{settings.phoneNumber}</p>
-                </div>
-              </div>
-              {settings.websiteUrl && (
-                <div className="flex items-center gap-3">
-                  <Globe className="h-4 w-4 text-gray-500" />
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50">
+                  <div className="p-2 rounded-lg bg-blue-100">
+                    <Mail className="w-4 h-4 text-blue-600" />
+                  </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Website</label>
-                    <a 
-                      href={settings.websiteUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-[var(--hff-teal)] hover:underline"
+                    <p className="text-sm font-medium text-gray-500">Email</p>
+                    <a
+                      href={`mailto:${settings.primaryEmail}`}
+                      className="text-gray-900 hover:text-[var(--hff-teal)] transition-colors"
                     >
-                      {settings.websiteUrl}
+                      {settings.primaryEmail}
                     </a>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50">
+                  <div className="p-2 rounded-lg bg-emerald-100">
+                    <Phone className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Phone</p>
+                    <a
+                      href={`tel:${settings.phoneNumber}`}
+                      className="text-gray-900 hover:text-[var(--hff-teal)] transition-colors"
+                    >
+                      {settings.phoneNumber}
+                    </a>
+                  </div>
+                </div>
+
+                {settings.websiteUrl && (
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 md:col-span-2">
+                    <div className="p-2 rounded-lg bg-purple-100">
+                      <Globe className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-500">Website</p>
+                      <a
+                        href={settings.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--hff-teal)] hover:underline flex items-center gap-1"
+                      >
+                        {settings.websiteUrl}
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+          </FadeIn>
 
           {/* Physical Address */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-[var(--hff-teal)]" />
+          <FadeIn delay={0.25}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <MapPin className="w-5 h-5 text-[var(--hff-teal)]" />
                 Physical Address
-              </CardTitle>
-              <CardDescription>Foundation mailing address</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-gray-900">
-                <p>{settings.streetAddress}</p>
-                {settings.addressLine2 && <p>{settings.addressLine2}</p>}
-                <p>{settings.city}, {settings.state} {settings.zipCode}</p>
+              </h2>
+
+              <div className="p-4 rounded-xl bg-gray-50">
+                <p className="text-gray-900 font-medium">{settings.streetAddress}</p>
+                {settings.addressLine2 && (
+                  <p className="text-gray-700">{settings.addressLine2}</p>
+                )}
+                <p className="text-gray-700">
+                  {settings.city}, {settings.state} {settings.zipCode}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </GlassCard>
+          </FadeIn>
 
           {/* Social Media */}
           {(settings.facebookUrl || settings.twitterUrl || settings.linkedinUrl) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-[var(--hff-teal)]" />
+            <FadeIn delay={0.3}>
+              <GlassCard className="p-6">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                  <Globe className="w-5 h-5 text-[var(--hff-teal)]" />
                   Social Media
-                </CardTitle>
-                <CardDescription>Social media presence</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {settings.facebookUrl && (
-                  <div className="flex items-center gap-3">
-                    <Facebook className="h-4 w-4 text-gray-500" />
-                    <a 
-                      href={settings.facebookUrl} 
-                      target="_blank" 
+                </h2>
+
+                <div className="flex flex-wrap gap-3">
+                  {settings.facebookUrl && (
+                    <a
+                      href={settings.facebookUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[var(--hff-teal)] hover:underline text-sm"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
                     >
-                      {settings.facebookUrl}
+                      <Facebook className="w-5 h-5" />
+                      <span className="font-medium">Facebook</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-50" />
                     </a>
-                  </div>
-                )}
-                {settings.twitterUrl && (
-                  <div className="flex items-center gap-3">
-                    <Twitter className="h-4 w-4 text-gray-500" />
-                    <a 
-                      href={settings.twitterUrl} 
-                      target="_blank" 
+                  )}
+                  {settings.twitterUrl && (
+                    <a
+                      href={settings.twitterUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[var(--hff-teal)] hover:underline text-sm"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
                     >
-                      {settings.twitterUrl}
+                      <Twitter className="w-5 h-5" />
+                      <span className="font-medium">Twitter</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-50" />
                     </a>
-                  </div>
-                )}
-                {settings.linkedinUrl && (
-                  <div className="flex items-center gap-3">
-                    <Linkedin className="h-4 w-4 text-gray-500" />
-                    <a 
-                      href={settings.linkedinUrl} 
-                      target="_blank" 
+                  )}
+                  {settings.linkedinUrl && (
+                    <a
+                      href={settings.linkedinUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[var(--hff-teal)] hover:underline text-sm"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                     >
-                      {settings.linkedinUrl}
+                      <Linkedin className="w-5 h-5" />
+                      <span className="font-medium">LinkedIn</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-50" />
                     </a>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </div>
+              </GlassCard>
+            </FadeIn>
           )}
 
           {/* Last Updated */}
           {settings.updatedByName && (
-            <div className="text-sm text-gray-500 text-center">
-              Last updated by {settings.updatedByName} on{' '}
-              {new Date(settings.updatedAt).toLocaleString()}
-            </div>
+            <FadeIn delay={0.35}>
+              <div className="text-sm text-gray-500 text-center py-4">
+                Last updated by <span className="font-medium">{settings.updatedByName}</span> on{' '}
+                {new Date(settings.updatedAt).toLocaleString()}
+              </div>
+            </FadeIn>
           )}
         </div>
 

@@ -4,6 +4,20 @@ import { notFound } from 'next/navigation'
 import { ApplicationDetailView } from '@/components/reviewer/ApplicationDetailView'
 import { isAdmin, isManager } from '@/lib/auth/access'
 
+// Helper to serialize Prisma objects for client components
+// Converts Decimals to numbers and Dates to ISO strings
+function serializeForClient<T>(obj: T): T {
+  return JSON.parse(
+    JSON.stringify(obj, (key, value) => {
+      // Prisma Decimals have a toNumber method or toString
+      if (value !== null && typeof value === 'object' && 'toNumber' in value) {
+        return value.toNumber()
+      }
+      return value
+    })
+  )
+}
+
 export default async function ApplicationDetailPage({
   params,
 }: {
@@ -39,9 +53,12 @@ export default async function ApplicationDetailPage({
   const userIsAdmin = await isAdmin()
   const userIsManager = await isManager()
 
+  // Serialize Decimals and Dates to plain values for client component
+  const serializedApplication = serializeForClient(application)
+
   return (
     <ApplicationDetailView
-      application={application}
+      application={serializedApplication}
       userIsAdmin={userIsAdmin}
       userIsManager={userIsManager}
     />

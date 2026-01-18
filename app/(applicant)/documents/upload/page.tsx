@@ -2,16 +2,33 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { GlassCard } from '@/components/glass/GlassCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { FadeIn } from '@/components/motion/FadeIn'
+import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Upload, FileText, Loader2, X, AlertCircle } from 'lucide-react'
+import {
+  Upload,
+  FileText,
+  Loader2,
+  X,
+  AlertCircle,
+  ArrowLeft,
+  FolderOpen,
+  CheckCircle,
+} from 'lucide-react'
 import { formatFileSize, validateFileType, validateFileSize } from '@/lib/storage'
+import Link from 'next/link'
 
 const DOCUMENT_TYPES = [
   { value: 'FORM_990', label: 'Form 990' },
@@ -95,7 +112,6 @@ export default function DocumentUploadPage() {
     setUploading(true)
 
     try {
-      // Get organization ID
       const orgResponse = await fetch('/api/organizations')
       const org = await orgResponse.json()
 
@@ -112,7 +128,7 @@ export default function DocumentUploadPage() {
       formData.append('description', description)
       formData.append('scope', 'ORGANIZATION')
       formData.append('organizationId', org.id)
-      
+
       if (documentYear) {
         formData.append('year', documentYear)
       }
@@ -140,162 +156,207 @@ export default function DocumentUploadPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Upload Document</h1>
-        <p className="text-gray-600 mb-8">Add a document to your organization library</p>
+        {/* Header */}
+        <FadeIn>
+          <Link
+            href="/documents"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Documents
+          </Link>
+
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-xl bg-[var(--hff-teal)]/10">
+                <Upload className="w-6 h-6 text-[var(--hff-teal)]" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Upload Document</h1>
+                <p className="text-gray-600">Add a document to your organization library</p>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* File Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Select File</CardTitle>
-              <CardDescription>PDF, Word, or Excel files up to 10MB</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <FadeIn delay={0.1}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-2">
+                <FolderOpen className="w-5 h-5 text-[var(--hff-teal)]" />
+                Select File
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">PDF, Word, or Excel files up to 10MB</p>
+
               {!file ? (
                 <div
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+                  className={`border-2 border-dashed rounded-xl p-12 text-center transition-all ${
                     dragActive
-                      ? 'border-[var(--hff-teal)] bg-[var(--hff-teal-50)]'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-[var(--hff-teal)] bg-[var(--hff-teal)]/5 scale-[1.02]'
+                      : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50/50'
                   }`}
                 >
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium mb-2">Drop file here or click to browse</p>
+                  <motion.div
+                    animate={dragActive ? { scale: 1.1 } : { scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    </div>
+                  </motion.div>
+                  <p className="text-lg font-medium text-gray-900 mb-2">
+                    Drop file here or click to browse
+                  </p>
                   <p className="text-sm text-gray-600 mb-4">Accepted: PDF, DOC, DOCX, XLS, XLSX</p>
                   <Input
                     type="file"
                     accept=".pdf,.doc,.docx,.xls,.xlsx"
                     onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                    className="max-w-xs mx-auto"
+                    className="max-w-xs mx-auto bg-white"
                   />
                 </div>
               ) : (
-                <div className="border rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-8 w-8 text-[var(--hff-teal)]" />
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="border rounded-xl p-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-emerald-600" />
+                      </div>
                       <div>
-                        <p className="font-medium">{file.name}</p>
+                        <p className="font-medium text-gray-900">{file.name}</p>
                         <p className="text-sm text-gray-600">{formatFileSize(file.size)}</p>
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFile(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               )}
-            </CardContent>
-          </Card>
+            </GlassCard>
+          </FadeIn>
 
           {/* Document Details */}
           {file && (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Document Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="documentType">Document Type *</Label>
-                    <Select value={documentType} onValueChange={setDocumentType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select document type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DOCUMENT_TYPES.map(type => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <FadeIn delay={0.15}>
+                <GlassCard className="p-6">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                    <FileText className="w-5 h-5 text-[var(--hff-teal)]" />
+                    Document Details
+                  </h2>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="documentName">Document Name *</Label>
-                    <Input
-                      id="documentName"
-                      value={documentName}
-                      onChange={(e) => setDocumentName(e.target.value)}
-                      placeholder="e.g., Form 990 - 2024"
-                    />
-                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="documentType">Document Type *</Label>
+                      <Select value={documentType} onValueChange={setDocumentType}>
+                        <SelectTrigger className="bg-white/50">
+                          <SelectValue placeholder="Select document type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DOCUMENT_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Additional notes about this document..."
-                      rows={3}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="documentName">Document Name *</Label>
+                      <Input
+                        id="documentName"
+                        value={documentName}
+                        onChange={(e) => setDocumentName(e.target.value)}
+                        placeholder="e.g., Form 990 - 2024"
+                        className="bg-white/50"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="documentYear">Year (Optional)</Label>
-                    <Input
-                      id="documentYear"
-                      type="number"
-                      value={documentYear}
-                      onChange={(e) => setDocumentYear(e.target.value)}
-                      placeholder="2024"
-                      min="2000"
-                      max={new Date().getFullYear()}
-                    />
-                    <p className="text-sm text-gray-600">
-                      For dated documents like Form 990 or financial statements
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description (Optional)</Label>
+                      <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Additional notes about this document..."
+                        rows={3}
+                        className="bg-white/50"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="documentYear">Year (Optional)</Label>
+                      <Input
+                        id="documentYear"
+                        type="number"
+                        value={documentYear}
+                        onChange={(e) => setDocumentYear(e.target.value)}
+                        placeholder="2024"
+                        min="2000"
+                        max={new Date().getFullYear()}
+                        className="bg-white/50 max-w-[200px]"
+                      />
+                      <p className="text-sm text-gray-500">
+                        For dated documents like Form 990 or financial statements
+                      </p>
+                    </div>
+                  </div>
+                </GlassCard>
+              </FadeIn>
+
+              <FadeIn delay={0.2}>
+                <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <p className="text-blue-800 text-sm">
+                      Documents uploaded to your library can be reused across multiple grant
+                      applications.
                     </p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Documents uploaded to your library can be reused across multiple grant applications.
-                </AlertDescription>
-              </Alert>
+                </div>
+              </FadeIn>
             </>
           )}
 
           {/* Submit Buttons */}
-          <div className="flex items-center justify-between pt-6 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push('/documents')}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!file || uploading}
-              className="bg-[var(--hff-teal)] hover:bg-[var(--hff-teal-dark)]"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Document
-                </>
-              )}
-            </Button>
-          </div>
+          <FadeIn delay={file ? 0.25 : 0.15}>
+            <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+              <Button type="button" variant="outline" onClick={() => router.push('/documents')}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!file || uploading}
+                className="gap-2 bg-[var(--hff-teal)] hover:bg-[var(--hff-teal)]/90"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Upload Document
+                  </>
+                )}
+              </Button>
+            </div>
+          </FadeIn>
         </form>
       </div>
     </div>
