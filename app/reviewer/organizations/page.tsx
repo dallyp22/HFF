@@ -1,12 +1,29 @@
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { Building2 } from 'lucide-react'
+import { format } from 'date-fns'
 
-export default async function OrganizationsPage() {
+export default async function OrganizationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string }>
+}) {
+  const params = await searchParams
+  const searchQuery = params.search
+
   const organizations = await prisma.organization.findMany({
+    where: {
+      ...(searchQuery && {
+        OR: [
+          { legalName: { contains: searchQuery, mode: 'insensitive' } },
+          { city: { contains: searchQuery, mode: 'insensitive' } },
+          { state: { contains: searchQuery, mode: 'insensitive' } },
+        ],
+      }),
+    },
     include: {
       _count: {
         select: {
@@ -32,61 +49,65 @@ export default async function OrganizationsPage() {
           <p className="text-gray-600">{organizations.length} organizations in system</p>
         </div>
 
-        {organizations.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Building2 className="h-16 w-16 text-gray-300 mb-4" />
-              <p className="text-gray-600">No organizations yet</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {organizations.map(org => (
-              <Card key={org.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl mb-1">{org.legalName}</CardTitle>
-                      <p className="text-sm text-gray-600">
-                        {org.city}, {org.state} • EIN: {org.ein}
+        {/* Search */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <form action="/reviewer/organizations" method="get">
+              <Input 
+                name="search"
+                placeholder="Search organizations by name, city, or state..." 
+                defaultValue={searchQuery}
+              />
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Organizations List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Organizations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {organizations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Building2 className="h-16 w-16 text-gray-300 mb-4" />
+                <p className="text-gray-600">
+                  {searchQuery ? 'No organizations found matching your search' : 'No organizations yet'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {organizations.map(org => (
+                  <Link
+                    key={org.id}
+                    href={`/reviewer/organizations/${org.id}`}
+                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <p className="font-semibold">{org.legalName}</p>
+                        {org.profileComplete && (
+                          <Badge className="bg-green-100 text-green-700">Complete</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {org.city}, {org.state}
                       </p>
-                    </div>
-                    {org.profileComplete && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        Complete
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Applications:</span>
-                      <span className="font-medium">{org._count.applications}</span>
-                    </div>
-                    {org.annualBudget && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Annual Budget:</span>
-                        <span className="font-medium">${org.annualBudget.toLocaleString()}</span>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        {org.annualBudget && (
+                          <span>Annual Budget: ${org.annualBudget.toLocaleString()}</span>
+                        )}
+                        {org.applications[0]?.submittedAt && (
+                          <span>Last Application: {format(new Date(org.applications[0].submittedAt), 'MMM d, yyyy')}</span>
+                        )}
                       </div>
-                    )}
-                    {org.applications[0]?.submittedAt && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Last Application:</span>
-                        <span className="font-medium">
-                          {new Date(org.applications[0].submittedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <Button size="sm" variant="outline" className="w-full" asChild>
-                    <Link href={`/reviewer/organizations/${org.id}`}>View Profile</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
