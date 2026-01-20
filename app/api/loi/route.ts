@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 // GET - List LOIs (applicant sees their own, reviewers see all)
 export async function GET(req: Request) {
@@ -20,12 +21,12 @@ export async function GET(req: Request) {
       select: { organizationId: true },
     })
 
-    // Check if user is a reviewer (has org memberships)
-    const isReviewer = (user as any).organizationMemberships?.length > 0
+    // Check if user is a reviewer (includes hardcoded admin check)
+    const reviewerAccess = await checkIsReviewer()
 
     let where: any = {}
 
-    if (!isReviewer) {
+    if (!reviewerAccess) {
       // Applicants only see their own organization's LOIs
       if (!dbUser?.organizationId) {
         return NextResponse.json([])
