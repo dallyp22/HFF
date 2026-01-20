@@ -95,15 +95,9 @@ export async function POST(
       sendInfoRequest({
         applicationId: id,
         projectTitle: application.projectTitle || 'Your Application',
-        organizationName: application.organization.legalName,
-        message,
-        responseDeadline: responseDeadline ? new Date(responseDeadline).toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }) : undefined,
         applicantEmail,
+        message,
+        deadline: responseDeadline || undefined,
       }).catch(err => console.error('Failed to send info request email:', err))
     }
 
