@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth/access'
+import { sendApplicationStatusChange } from '@/lib/email'
 
 const validTransitions: Record<string, string[]> = {
   'DRAFT': ['SUBMITTED'],
@@ -39,7 +40,18 @@ export async function PATCH(
 
     const application = await prisma.application.findUnique({
       where: { id },
-      select: { status: true },
+      select: {
+        status: true,
+        projectTitle: true,
+        organization: {
+          select: {
+            users: {
+              select: { email: true },
+              take: 1,
+            },
+          },
+        },
+      },
     })
 
     if (!application) {
@@ -80,10 +92,17 @@ export async function PATCH(
       },
     })
 
-    // TODO: Send email notification when email system is ready
-    // if (newStatus === 'APPROVED' || newStatus === 'DECLINED') {
-    //   await sendDecisionEmail(updated, newStatus === 'APPROVED')
-    // }
+    // Send email notification for significant status changes
+    const applicantEmail = application.organization.users[0]?.email
+    if (applicantEmail && ['APPROVED', 'DECLINED', 'INFO_REQUESTED', 'UNDER_REVIEW'].includes(newStatus)) {
+      sendApplicationStatusChange({
+        applicationId: id,
+        projectTitle: application.projectTitle || 'Your Application',
+        newStatus,
+        reason,
+        applicantEmail,
+      }).catch(err => console.error('Failed to send status change email:', err))
+    }
 
     return NextResponse.json(updated)
   } catch (error) {

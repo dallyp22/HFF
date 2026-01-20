@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { sendLOISubmittedToAdmin, getAdminEmails } from '@/lib/email'
 
 // POST - Submit an LOI for review
 export async function POST(
@@ -142,7 +143,18 @@ export async function POST(
       }),
     ])
 
-    // TODO: Send email notification to admin
+    // Send email notification to admin
+    const adminEmails = await getAdminEmails()
+    sendLOISubmittedToAdmin({
+      loiId: id,
+      projectTitle: loi.projectTitle || 'Untitled Project',
+      organizationName: updatedLoi.organization.legalName,
+      contactEmail: loi.primaryContactEmail || user.emailAddresses?.[0]?.emailAddress || '',
+      requestAmount: loi.grantRequestAmount
+        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(loi.grantRequestAmount))
+        : 'Not specified',
+      adminEmails,
+    }).catch(err => console.error('Failed to send LOI submission email:', err))
 
     return NextResponse.json(updatedLoi)
   } catch (error) {

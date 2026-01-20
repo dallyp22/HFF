@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { sendLOIApproved, sendLOIDeclined } from '@/lib/email'
 
 // POST - Admin reviews LOI (approve or decline)
 export async function POST(
@@ -34,7 +35,14 @@ export async function POST(
     const loi = await prisma.letterOfInterest.findUnique({
       where: { id },
       include: {
-        organization: true,
+        organization: {
+          include: {
+            users: {
+              select: { email: true },
+              take: 1,
+            },
+          },
+        },
         cycleConfig: true,
       },
     })
@@ -104,7 +112,18 @@ export async function POST(
         }),
       ])
 
-      // TODO: Send email notification to applicant about approval
+      // Send email notification to applicant about approval
+      const applicantEmail = loi.primaryContactEmail || loi.organization.users[0]?.email
+      if (applicantEmail) {
+        sendLOIApproved({
+          loiId: id,
+          applicationId: application.id,
+          projectTitle: loi.projectTitle || 'Your Project',
+          organizationName: loi.organization.legalName,
+          applicantEmail,
+          fullAppDeadline: loi.cycleConfig.fullAppDeadline?.toISOString(),
+        }).catch(err => console.error('Failed to send LOI approval email:', err))
+      }
 
       return NextResponse.json({
         loi: updatedLoi,
@@ -137,7 +156,16 @@ export async function POST(
         }),
       ])
 
-      // TODO: Send email notification to applicant about decline
+      // Send email notification to applicant about decline
+      const applicantEmail = loi.primaryContactEmail || loi.organization.users[0]?.email
+      if (applicantEmail) {
+        sendLOIDeclined({
+          projectTitle: loi.projectTitle || 'Your Project',
+          organizationName: loi.organization.legalName,
+          applicantEmail,
+          reason,
+        }).catch(err => console.error('Failed to send LOI decline email:', err))
+      }
 
       return NextResponse.json({
         loi: updatedLoi,

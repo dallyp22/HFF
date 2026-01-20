@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { isManager } from '@/lib/auth/access'
+import { sendInfoRequest } from '@/lib/email'
 
 export async function POST(
   req: Request,
@@ -32,6 +33,27 @@ export async function POST(
         { error: 'Message is required' },
         { status: 400 }
       )
+    }
+
+    // Get application with organization for email
+    const application = await prisma.application.findUnique({
+      where: { id },
+      select: {
+        projectTitle: true,
+        organization: {
+          select: {
+            legalName: true,
+            users: {
+              select: { email: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    })
+
+    if (!application) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }
 
     // Change status to INFO_REQUESTED
@@ -67,8 +89,23 @@ export async function POST(
       },
     })
 
-    // TODO: Send email notification when email system is ready
-    // await sendInfoRequestEmail(application, message)
+    // Send email notification to applicant
+    const applicantEmail = application.organization.users[0]?.email
+    if (applicantEmail) {
+      sendInfoRequest({
+        applicationId: id,
+        projectTitle: application.projectTitle || 'Your Application',
+        organizationName: application.organization.legalName,
+        message,
+        responseDeadline: responseDeadline ? new Date(responseDeadline).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }) : undefined,
+        applicantEmail,
+      }).catch(err => console.error('Failed to send info request email:', err))
+    }
 
     return NextResponse.json(communication)
   } catch (error) {
