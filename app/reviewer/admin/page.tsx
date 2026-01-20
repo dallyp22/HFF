@@ -11,7 +11,7 @@ export default async function AdminDashboardPage() {
   ])
 
   // Get reviewer count via Clerk
-  const HFF_ORG_ID = 'org_382FE_JSV0UZW59'
+  const HFF_ORG_ID = process.env.CLERK_ORGANIZATION_ID || 'org_382FE_JSV0UZW59'
   let reviewerCount = 0
   try {
     const client = await clerkClient()
@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
     })
     reviewerCount = members.data.length
   } catch (error) {
-    console.error('Error fetching reviewers:', error)
+    console.error('Error fetching reviewers (org may not exist):', error)
   }
 
   // Recent activity (last 10 status changes)

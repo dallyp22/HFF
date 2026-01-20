@@ -3,7 +3,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { clerkClient } from '@clerk/nextjs/server'
 import { isAdmin } from '@/lib/auth/access'
 
-const HFF_ORG_ID = 'org_382FE_JSV0UZW59'
+const HFF_ORG_ID = process.env.CLERK_ORGANIZATION_ID || 'org_382FE_JSV0UZW59'
 
 export async function DELETE(
   req: Request,
