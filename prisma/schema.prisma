@@ -44,38 +44,6 @@ enum DocumentType {
 enum DocumentScope {
   ORGANIZATION  // Stored in org document library
   APPLICATION   // Specific to an application
-  LOI           // Specific to a Letter of Interest
-}
-
-// ============================================
-// LOI ENUMS
-// ============================================
-
-enum LOIStatus {
-  DRAFT
-  SUBMITTED
-  UNDER_REVIEW
-  APPROVED
-  DECLINED
-  WITHDRAWN
-}
-
-enum FocusArea {
-  HUMAN_HEALTH
-  EDUCATION
-  COMMUNITY_WELLBEING
-}
-
-enum ExpenditureType {
-  PROGRAMMING       // Programming/Special Project
-  OPERATING         // Operating Funding
-  CAPITAL           // Capital Project (requires pre-approval)
-}
-
-enum GeographyServed {
-  OMAHA_COUNCIL_BLUFFS
-  WESTERN_IOWA_100_MILES
-  OTHER
 }
 
 // ============================================
@@ -166,11 +134,10 @@ model Organization {
   users                 User[]
   documents             Document[]
   applications          Application[]
-  lois                  LetterOfInterest[]
-
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-
+  
   @@index([ein])
   @@index([legalName])
 }
@@ -181,138 +148,38 @@ model Organization {
 
 model Document {
   id                    String       @id @default(cuid())
-
+  
   // Ownership
   organizationId        String?
   organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applicationId         String?
   application           Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  loiId                 String?
-  loi                   LetterOfInterest? @relation(fields: [loiId], references: [id], onDelete: Cascade)
-
+  
   // Document Info
   scope                 DocumentScope
   type                  DocumentType
   name                  String       // User-friendly name
   description           String?
-
+  
   // File Details
   fileName              String
   fileSize              Int
   mimeType              String
   storageKey            String       // Blob/S3 key
   storageUrl            String       // URL (regenerated for private)
-
+  
   // Metadata
   documentYear          Int?         // For Form 990, financials
   expiresAt             DateTime?    // For time-sensitive docs
-
+  
   // Audit
   uploadedById          String       // Clerk user ID
   uploadedByName        String
   uploadedAt            DateTime     @default(now())
-
+  
   @@index([organizationId])
   @@index([applicationId])
-  @@index([loiId])
   @@index([type])
-}
-
-// ============================================
-// LETTER OF INTEREST (LOI) MODEL
-// ============================================
-
-model LetterOfInterest {
-  id                    String       @id @default(cuid())
-
-  // Relationships
-  organizationId        String
-  organization          Organization @relation(fields: [organizationId], references: [id])
-  cycleConfigId         String
-  cycleConfig           GrantCycleConfig @relation(fields: [cycleConfigId], references: [id])
-
-  // Status tracking
-  status                LOIStatus    @default(DRAFT)
-
-  // Contact Information (from LOI document)
-  primaryContactName    String?
-  primaryContactTitle   String?
-  primaryContactPhone   String?
-  primaryContactEmail   String?
-  executiveDirector     String?
-
-  // Foundation Focus (single selection)
-  focusArea             FocusArea?
-
-  // Expenditure Type
-  expenditureType       ExpenditureType?
-
-  // Project Questions
-  isNewProject          Boolean?
-  newProjectExplanation String?      @db.Text
-  isCapacityIncrease    Boolean?
-  capacityExplanation   String?      @db.Text
-
-  // Project Details
-  projectTitle          String?
-  projectDescription    String?      @db.Text  // 500 word max
-
-  // Financial Information
-  totalProjectAmount    Decimal?     @db.Decimal(12, 2)
-  grantRequestAmount    Decimal?     @db.Decimal(12, 2)
-  percentOfProject      Decimal?     @db.Decimal(5, 2)  // Auto-calculated
-  budgetOutline         String?      @db.Text  // 250 word max
-
-  // Photos (1-3 jpgs) - via Document relation
-  documents             Document[]
-
-  // Admin Review
-  reviewedById          String?
-  reviewedByName        String?
-  reviewedAt            DateTime?
-  reviewNotes           String?      @db.Text
-  decisionReason        String?      @db.Text
-
-  // Multi-step form tracking
-  currentStep           Int          @default(1)
-  completedSteps        Int[]        @default([])
-  lastSavedAt           DateTime?
-
-  // Submission tracking
-  submittedAt           DateTime?
-  submittedById         String?
-  submittedByName       String?
-
-  // Link to resulting application (if approved)
-  application           Application?
-
-  // Status history for LOI
-  statusHistory         LOIStatusHistory[]
-
-  // Timestamps
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
-
-  @@unique([organizationId, cycleConfigId])  // One LOI per org per cycle
-  @@index([status])
-  @@index([cycleConfigId])
-  @@index([organizationId])
-}
-
-model LOIStatusHistory {
-  id                    String       @id @default(cuid())
-  loiId                 String
-  loi                   LetterOfInterest @relation(fields: [loiId], references: [id], onDelete: Cascade)
-
-  previousStatus        LOIStatus?
-  newStatus             LOIStatus
-  changedById           String?
-  changedByName         String?
-  reason                String?      @db.Text
-
-  createdAt             DateTime     @default(now())
-
-  @@index([loiId])
 }
 
 // ============================================
@@ -321,35 +188,21 @@ model LOIStatusHistory {
 
 model Application {
   id                    String            @id @default(cuid())
-
+  
   // Relationships
   organizationId        String
   organization          Organization      @relation(fields: [organizationId], references: [id])
-
-  // Link back to LOI (required - applications created from approved LOIs)
-  loiId                 String?           @unique
-  loi                   LetterOfInterest? @relation(fields: [loiId], references: [id])
-
+  
   // Application Metadata
   grantCycle            GrantCycle
   cycleYear             Int
   status                ApplicationStatus @default(DRAFT)
   submittedAt           DateTime?
-
+  
   // Submission tracking
   submittedById         String?           // Clerk user ID
   submittedByName       String?
-
-  // --- Organization Info (displayed for reference, inherited from profile) ---
-  missionStatement      String?           @db.Text
-  servicesDescription   String?           @db.Text
-
-  // --- Project Information (from Full Application) ---
-  focusArea             FocusArea?
-  geographyServed       GeographyServed[] @default([])
-  geographyOther        String?           // If "OTHER" is selected
-  projectCategory       ExpenditureType?
-
+  
   // Project Details
   projectTitle          String?
   projectDescription    String?           @db.Text
@@ -358,50 +211,35 @@ model Application {
   geographicArea        String?
   projectStartDate      DateTime?
   projectEndDate        DateTime?
-
-  // --- Proposed Project Details (Full Application specific) ---
-  proposedProject       String?           @db.Text  // Describe action to be funded, alignment to HFF mission
-  proposedExpenditures  String?           @db.Text  // How grant funds will be spent
-  statementOfNeed       String?           @db.Text  // Need or opportunity addressed
-  clientDemographic     String?           @db.Text  // Demographics served
-
+  
   // Funding Request
   amountRequested       Decimal?          @db.Decimal(10, 2)
   totalProjectBudget    Decimal?          @db.Decimal(10, 2)
   percentageRequested   Decimal?          @db.Decimal(5, 2) // Auto-calculated
   otherFundingSources   String?           @db.Text
   previousHFFGrants     String?           @db.Text
-
+  
   // Impact & Outcomes
   expectedOutcomes      String?           @db.Text
   measurementPlan       String?           @db.Text
   sustainabilityPlan    String?           @db.Text
   beneficiariesCount    Int?
-
+  
   // Children Focus (Mission Alignment)
   childrenServed        Int?
   ageRangeStart         Int?
   ageRangeEnd           Int?
   povertyIndicators     String?           @db.Text
   schoolsServed         String?           @db.Text
-
-  // Board of Directors
-  boardOfDirectors      String?           @db.Text  // List with affiliations
-
-  // Agreement & Signature
-  agreementAccepted     Boolean           @default(false)
-  signatureName         String?
-  signatureTitle        String?
-  signatureDate         DateTime?
-
+  
   // Budget Breakdown (JSON for flexibility)
   budgetBreakdown       Json?
-
+  
   // Application Progress (for multi-step form)
   currentStep           Int               @default(1)
   completedSteps        Int[]             @default([])
   lastSavedAt           DateTime?
-
+  
   // AI-Generated Content
   aiSummary             String?           @db.Text
   aiSummaryGeneratedAt  DateTime?
@@ -410,22 +248,21 @@ model Application {
   aiStrengths           String[]          @default([])
   aiConcerns            String[]          @default([])
   aiQuestions           String[]          @default([])
-
+  
   // Related Data
   documents             Document[]
   notes                 Note[]
   statusHistory         StatusHistory[]
   communications        Communication[]
   votes                 Vote[]
-
+  
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
-
+  
   @@index([status])
   @@index([grantCycle, cycleYear])
   @@index([organizationId])
   @@index([submittedAt])
-  @@index([loiId])
 }
 
 model Note {
@@ -509,30 +346,24 @@ model GrantCycleConfig {
   id                    String     @id @default(cuid())
   cycle                 GrantCycle
   year                  Int
-
+  
   // Dates
   loiOpenDate           DateTime?
   loiDeadline           DateTime
-  loiReviewDeadline     DateTime?  // When admin should finish LOI reviews
-  fullAppOpenDate       DateTime?  // When approved LOIs can start full app
   fullAppDeadline       DateTime?
   reviewStartDate       DateTime?
   decisionDate          DateTime?
-
-  // Status flags
+  
+  // Status
   isActive              Boolean    @default(false)
-  acceptingLOIs         Boolean    @default(false)  // LOI submission window
-  acceptingApplications Boolean    @default(false)  // Full app submission window
-
+  acceptingApplications Boolean    @default(false)
+  
   // Settings
   maxRequestAmount      Decimal?   @db.Decimal(10, 2)
-
-  // Relationships
-  lois                  LetterOfInterest[]
-
+  
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
-
+  
   @@unique([cycle, year])
 }
 

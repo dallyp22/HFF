@@ -24,14 +24,11 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
     year: cycle?.year || new Date().getFullYear() + 1,
     loiOpenDate: cycle?.loiOpenDate ? new Date(cycle.loiOpenDate).toISOString().split('T')[0] : '',
     loiDeadline: cycle?.loiDeadline ? new Date(cycle.loiDeadline).toISOString().split('T')[0] : '',
-    loiReviewDeadline: cycle?.loiReviewDeadline ? new Date(cycle.loiReviewDeadline).toISOString().split('T')[0] : '',
-    fullAppOpenDate: cycle?.fullAppOpenDate ? new Date(cycle.fullAppOpenDate).toISOString().split('T')[0] : '',
     fullAppDeadline: cycle?.fullAppDeadline ? new Date(cycle.fullAppDeadline).toISOString().split('T')[0] : '',
     reviewStartDate: cycle?.reviewStartDate ? new Date(cycle.reviewStartDate).toISOString().split('T')[0] : '',
     decisionDate: cycle?.decisionDate ? new Date(cycle.decisionDate).toISOString().split('T')[0] : '',
     maxRequestAmount: cycle?.maxRequestAmount || '',
     isActive: cycle?.isActive || false,
-    acceptingLOIs: cycle?.acceptingLOIs || false,
     acceptingApplications: cycle?.acceptingApplications || false,
   })
 
@@ -42,15 +39,12 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
         year: cycle.year,
         loiOpenDate: cycle.loiOpenDate ? new Date(cycle.loiOpenDate).toISOString().split('T')[0] : '',
         loiDeadline: cycle.loiDeadline ? new Date(cycle.loiDeadline).toISOString().split('T')[0] : '',
-        loiReviewDeadline: cycle.loiReviewDeadline ? new Date(cycle.loiReviewDeadline).toISOString().split('T')[0] : '',
-        fullAppOpenDate: cycle.fullAppOpenDate ? new Date(cycle.fullAppOpenDate).toISOString().split('T')[0] : '',
         fullAppDeadline: cycle.fullAppDeadline ? new Date(cycle.fullAppDeadline).toISOString().split('T')[0] : '',
         reviewStartDate: cycle.reviewStartDate ? new Date(cycle.reviewStartDate).toISOString().split('T')[0] : '',
         decisionDate: cycle.decisionDate ? new Date(cycle.decisionDate).toISOString().split('T')[0] : '',
         maxRequestAmount: cycle.maxRequestAmount || '',
         isActive: cycle.isActive,
-        acceptingLOIs: cycle.acceptingLOIs || false,
-        acceptingApplications: cycle.acceptingApplications || false,
+        acceptingApplications: cycle.acceptingApplications,
       })
     }
   }, [cycle, mode])
@@ -135,8 +129,8 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">LOI Phase Dates</h3>
-
+            <h3 className="font-semibold text-lg">Important Dates</h3>
+            
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>LOI Open Date</Label>
@@ -145,7 +139,6 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
                   value={formData.loiOpenDate}
                   onChange={(e) => setFormData({ ...formData, loiOpenDate: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">When applicants can start submitting LOIs</p>
               </div>
 
               <div className="space-y-2">
@@ -156,33 +149,6 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
                   onChange={(e) => setFormData({ ...formData, loiDeadline: e.target.value })}
                   required
                 />
-                <p className="text-xs text-gray-500">Last day to submit LOIs</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>LOI Review Deadline</Label>
-                <Input
-                  type="date"
-                  value={formData.loiReviewDeadline}
-                  onChange={(e) => setFormData({ ...formData, loiReviewDeadline: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">Deadline for admin to review all LOIs</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Full Application Phase Dates</h3>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Full Application Open Date</Label>
-                <Input
-                  type="date"
-                  value={formData.fullAppOpenDate}
-                  onChange={(e) => setFormData({ ...formData, fullAppOpenDate: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">When approved LOI applicants can start full applications</p>
               </div>
 
               <div className="space-y-2">
@@ -192,7 +158,6 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
                   value={formData.fullAppDeadline}
                   onChange={(e) => setFormData({ ...formData, fullAppDeadline: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">Last day to submit full applications</p>
               </div>
 
               <div className="space-y-2">
@@ -202,7 +167,6 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
                   value={formData.reviewStartDate}
                   onChange={(e) => setFormData({ ...formData, reviewStartDate: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">When reviewers begin evaluating applications</p>
               </div>
 
               <div className="space-y-2">
@@ -212,66 +176,48 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
                   value={formData.decisionDate}
                   onChange={(e) => setFormData({ ...formData, decisionDate: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">When grant decisions will be made</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Max Request Amount</Label>
+                <Input
+                  type="number"
+                  value={formData.maxRequestAmount}
+                  onChange={(e) => setFormData({ ...formData, maxRequestAmount: e.target.value })}
+                  placeholder="50000"
+                />
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Max Request Amount</Label>
-            <Input
-              type="number"
-              value={formData.maxRequestAmount}
-              onChange={(e) => setFormData({ ...formData, maxRequestAmount: e.target.value })}
-              placeholder="50000"
-            />
-            <p className="text-xs text-gray-500">Maximum grant amount applicants can request</p>
-          </div>
-
           <div className="space-y-3">
             <h3 className="font-semibold text-lg">Status</h3>
-
+            
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="isActive"
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-[var(--hff-teal)] focus:ring-[var(--hff-teal)]"
+                className="h-4 w-4"
               />
               <Label htmlFor="isActive" className="cursor-pointer">
-                Set as Active Cycle
+                Set as Active Cycle (only one cycle can be active)
               </Label>
             </div>
-            <p className="text-xs text-gray-500 ml-6">Only one cycle can be active at a time</p>
 
-            <div className="flex items-center space-x-2 mt-4">
-              <input
-                type="checkbox"
-                id="acceptingLOIs"
-                checked={formData.acceptingLOIs}
-                onChange={(e) => setFormData({ ...formData, acceptingLOIs: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-[var(--hff-teal)] focus:ring-[var(--hff-teal)]"
-              />
-              <Label htmlFor="acceptingLOIs" className="cursor-pointer">
-                Accepting Letters of Interest
-              </Label>
-            </div>
-            <p className="text-xs text-gray-500 ml-6">Allow applicants to submit new LOIs for this cycle</p>
-
-            <div className="flex items-center space-x-2 mt-4">
+            <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="acceptingApplications"
                 checked={formData.acceptingApplications}
                 onChange={(e) => setFormData({ ...formData, acceptingApplications: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-[var(--hff-teal)] focus:ring-[var(--hff-teal)]"
+                className="h-4 w-4"
               />
               <Label htmlFor="acceptingApplications" className="cursor-pointer">
-                Accepting Full Applications
+                Accepting Applications
               </Label>
             </div>
-            <p className="text-xs text-gray-500 ml-6">Allow approved LOI applicants to submit full applications</p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t">

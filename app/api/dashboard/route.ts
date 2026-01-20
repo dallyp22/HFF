@@ -20,25 +20,6 @@ export async function GET() {
               orderBy: { updatedAt: 'desc' },
               take: 10,
             },
-            lois: {
-              orderBy: { updatedAt: 'desc' },
-              take: 10,
-              include: {
-                cycleConfig: {
-                  select: {
-                    cycle: true,
-                    year: true,
-                    loiDeadline: true,
-                  },
-                },
-                application: {
-                  select: {
-                    id: true,
-                    status: true,
-                  },
-                },
-              },
-            },
           },
         },
       },
@@ -66,34 +47,14 @@ export async function GET() {
       return NextResponse.json({
         organization: null,
         profileCompletion: 0,
-        activeCycle: null,
-        lois: [],
       })
     }
 
     const profileCompletion = calculateProfileCompletion(dbUser.organization as any)
 
-    // Get active cycle info
-    const activeCycle = await prisma.grantCycleConfig.findFirst({
-      where: { isActive: true },
-      select: {
-        id: true,
-        cycle: true,
-        year: true,
-        loiDeadline: true,
-        loiOpenDate: true,
-        fullAppDeadline: true,
-        fullAppOpenDate: true,
-        acceptingLOIs: true,
-        acceptingApplications: true,
-      },
-    })
-
     return NextResponse.json({
       organization: dbUser.organization,
       profileCompletion,
-      activeCycle,
-      lois: dbUser.organization.lois || [],
     })
   } catch (error) {
     console.error('Error fetching dashboard data:', error)

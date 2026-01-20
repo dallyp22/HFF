@@ -32,7 +32,6 @@ interface Organization {
   legalName: string
   profileComplete: boolean
   applications: Application[]
-  lois: LOI[]
 }
 
 interface Application {
@@ -46,41 +45,9 @@ interface Application {
   submittedAt?: string
 }
 
-interface LOI {
-  id: string
-  status: string
-  projectTitle: string | null
-  createdAt: string
-  updatedAt: string
-  submittedAt: string | null
-  cycleConfig: {
-    cycle: string
-    year: number
-    loiDeadline: string
-  }
-  application: {
-    id: string
-    status: string
-  } | null
-}
-
-interface ActiveCycle {
-  id: string
-  cycle: string
-  year: number
-  loiDeadline: string
-  loiOpenDate: string | null
-  fullAppDeadline: string | null
-  fullAppOpenDate: string | null
-  acceptingLOIs: boolean
-  acceptingApplications: boolean
-}
-
 interface DashboardData {
   organization: Organization | null
   profileCompletion: number
-  activeCycle: ActiveCycle | null
-  lois: LOI[]
 }
 
 const statusConfig = {
@@ -91,15 +58,6 @@ const statusConfig = {
   APPROVED: { color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2, label: 'Approved' },
   DECLINED: { color: 'bg-red-100 text-red-700 border-red-200', icon: AlertCircle, label: 'Declined' },
   WITHDRAWN: { color: 'bg-gray-100 text-gray-500 border-gray-200', icon: FileText, label: 'Withdrawn' },
-}
-
-const loiStatusConfig = {
-  DRAFT: { color: 'bg-slate-100 text-slate-700', icon: FileText, label: 'Draft' },
-  SUBMITTED: { color: 'bg-amber-100 text-amber-700', icon: Send, label: 'Submitted' },
-  UNDER_REVIEW: { color: 'bg-blue-100 text-blue-700', icon: Clock, label: 'Under Review' },
-  APPROVED: { color: 'bg-green-100 text-green-700', icon: CheckCircle2, label: 'Approved' },
-  DECLINED: { color: 'bg-red-100 text-red-700', icon: AlertCircle, label: 'Declined' },
-  WITHDRAWN: { color: 'bg-gray-100 text-gray-500', icon: FileText, label: 'Withdrawn' },
 }
 
 export default function DashboardPage() {
@@ -130,8 +88,6 @@ export default function DashboardPage() {
   const organization = data?.organization
   const profileCompletion = data?.profileCompletion ?? 0
   const applications = organization?.applications || []
-  const lois = data?.lois || []
-  const activeCycle = data?.activeCycle
 
   const stats = {
     draft: applications.filter((a) => a.status === 'DRAFT').length,
@@ -140,25 +96,6 @@ export default function DashboardPage() {
     approved: applications.filter((a) => a.status === 'APPROVED').length,
     total: applications.length,
   }
-
-  const loiStats = {
-    draft: lois.filter((l) => l.status === 'DRAFT').length,
-    submitted: lois.filter((l) => l.status === 'SUBMITTED' || l.status === 'UNDER_REVIEW').length,
-    approved: lois.filter((l) => l.status === 'APPROVED').length,
-    declined: lois.filter((l) => l.status === 'DECLINED').length,
-    total: lois.length,
-  }
-
-  // Find current cycle LOI
-  const currentCycleLOI = activeCycle
-    ? lois.find((l) => l.cycleConfig.cycle === activeCycle.cycle && l.cycleConfig.year === activeCycle.year)
-    : null
-
-  // Check if user can start a new LOI for the current cycle
-  const canStartNewLOI = activeCycle?.acceptingLOIs && !currentCycleLOI && organization && profileCompletion === 100
-
-  // Check if user has an approved LOI that needs full application
-  const approvedLOIsPendingApp = lois.filter((l) => l.status === 'APPROVED' && !l.application)
 
   if (loading || !isLoaded) {
     return (
@@ -359,36 +296,6 @@ export default function DashboardPage() {
           </StaggerItem>
         </StaggerContainer>
 
-        {/* Approved LOI Alert - Prompt to complete full application */}
-        <AnimatePresence>
-          {approvedLOIsPendingApp.length > 0 && (
-            <FadeIn delay={0.15}>
-              <GlassCard variant="elevated" className="mb-8 border-l-4 border-l-green-500 overflow-hidden">
-                <div className="flex flex-col md:flex-row md:items-center gap-4 p-6">
-                  <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-7 h-7 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">LOI Approved!</h3>
-                    <p className="text-gray-600">
-                      Your Letter of Interest has been approved. Complete your full grant application to continue.
-                    </p>
-                  </div>
-                  <Button
-                    asChild
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20"
-                  >
-                    <Link href={`/loi/${approvedLOIsPendingApp[0].id}`}>
-                      Continue Application
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
-                  </Button>
-                </div>
-              </GlassCard>
-            </FadeIn>
-          )}
-        </AnimatePresence>
-
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6 mb-10">
           {/* Grant Cycle Card */}
@@ -405,74 +312,36 @@ export default function DashboardPage() {
                   <h3 className="text-lg font-semibold text-gray-900">Current Grant Cycle</h3>
                 </div>
 
-                {activeCycle ? (
-                  <div className="flex flex-col md:flex-row md:items-end gap-6">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">{activeCycle.cycle} {activeCycle.year} Cycle</p>
-                      <p className="text-4xl font-bold text-[var(--hff-teal)]">
-                        {new Date(activeCycle.loiDeadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-                      </p>
-                      <p className="text-lg text-gray-600">LOI Deadline</p>
-                      {activeCycle.acceptingLOIs && (
-                        <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                          Accepting LOIs
-                        </span>
-                      )}
-                    </div>
+                <div className="flex flex-col md:flex-row md:items-end gap-6">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Spring 2026 Cycle</p>
+                    <p className="text-4xl font-bold text-[var(--hff-teal)]">February 15</p>
+                    <p className="text-lg text-gray-600">LOI Deadline</p>
+                  </div>
 
-                    <div className="flex-1">
-                      {currentCycleLOI ? (
-                        <div className="bg-white/60 rounded-xl p-4 backdrop-blur-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-medium text-gray-700">Your LOI Status</span>
-                            <span className={cn(
-                              'px-2.5 py-0.5 rounded-full text-xs font-medium',
-                              loiStatusConfig[currentCycleLOI.status as keyof typeof loiStatusConfig]?.color || 'bg-gray-100 text-gray-700'
-                            )}>
-                              {loiStatusConfig[currentCycleLOI.status as keyof typeof loiStatusConfig]?.label || currentCycleLOI.status}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-3 truncate">
-                            {currentCycleLOI.projectTitle || 'Untitled Letter of Interest'}
-                          </p>
-                          <Button size="sm" variant="outline" asChild className="w-full">
-                            <Link href={currentCycleLOI.status === 'DRAFT' ? `/loi/${currentCycleLOI.id}/edit` : `/loi/${currentCycleLOI.id}`}>
-                              {currentCycleLOI.status === 'DRAFT' ? 'Continue Editing' : 'View Details'}
-                              <ArrowRight className="w-4 h-4 ml-2" />
-                            </Link>
-                          </Button>
-                        </div>
-                      ) : canStartNewLOI ? (
-                        <div className="bg-white/60 rounded-xl p-4 backdrop-blur-sm">
-                          <p className="text-sm text-gray-600 mb-3">
-                            Submit a Letter of Interest to be considered for this grant cycle.
-                          </p>
-                          <Button asChild className="w-full bg-[var(--hff-teal)] hover:bg-[var(--hff-teal-800)]">
-                            <Link href="/loi/new">
-                              Start LOI
-                              <ArrowRight className="w-4 h-4 ml-2" />
-                            </Link>
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="bg-white/60 rounded-xl p-4 backdrop-blur-sm">
-                          <p className="text-sm text-gray-500">
-                            {!organization ? 'Complete your organization profile to submit an LOI.' :
-                             profileCompletion < 100 ? 'Complete your profile to submit an LOI.' :
-                             !activeCycle.acceptingLOIs ? 'LOI submissions are currently closed.' :
-                             'You have already submitted an LOI for this cycle.'}
-                          </p>
-                        </div>
-                      )}
+                  <div className="flex-1">
+                    <div className="bg-white/60 rounded-xl p-4 backdrop-blur-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600">Timeline Progress</span>
+                        <span className="text-sm font-medium text-[var(--hff-teal)]">25%</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-[var(--hff-teal)] to-[var(--hff-sage)] rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: '25%' }}
+                          transition={{ duration: 1, delay: 0.5 }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>Open</span>
+                        <span>LOI Due</span>
+                        <span>Review</span>
+                        <span>Decision</span>
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500">No active grant cycle at this time.</p>
-                    <p className="text-sm text-gray-400 mt-1">Check back soon for upcoming cycles.</p>
-                  </div>
-                )}
+                </div>
               </div>
             </GlassCard>
           </FadeIn>
@@ -528,9 +397,9 @@ export default function DashboardPage() {
         <FadeIn delay={0.25}>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         </FadeIn>
-        <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10" staggerDelay={0.05}>
+        <StaggerContainer className="grid md:grid-cols-3 gap-4 mb-10" staggerDelay={0.05}>
           <StaggerItem>
-            <Link href="/loi" className="block group">
+            <Link href="/applications/new" className="block group">
               <GlassCard hover className="p-6 transition-all duration-300 group-hover:border-[var(--hff-teal)]/30">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--hff-teal)] to-[var(--hff-teal-800)] flex items-center justify-center shadow-lg shadow-[var(--hff-teal)]/20 group-hover:scale-110 transition-transform">
@@ -538,9 +407,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[var(--hff-teal)] transition-colors">
-                      Letters of Interest
+                      New Application
                     </h3>
-                    <p className="text-sm text-gray-500">View and manage LOIs</p>
+                    <p className="text-sm text-gray-500">Start a new grant application</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-teal)] group-hover:translate-x-1 transition-all" />
                 </div>
@@ -549,38 +418,19 @@ export default function DashboardPage() {
           </StaggerItem>
 
           <StaggerItem>
-            <Link href="/applications" className="block group">
+            <Link href="/documents" className="block group">
               <GlassCard hover className="p-6 transition-all duration-300 group-hover:border-[var(--hff-sage)]/30">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--hff-sage)] to-emerald-600 flex items-center justify-center shadow-lg shadow-[var(--hff-sage)]/20 group-hover:scale-110 transition-transform">
-                    <Folder className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[var(--hff-sage)] transition-colors">
-                      Applications
-                    </h3>
-                    <p className="text-sm text-gray-500">View full applications</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-sage)] group-hover:translate-x-1 transition-all" />
-                </div>
-              </GlassCard>
-            </Link>
-          </StaggerItem>
-
-          <StaggerItem>
-            <Link href="/documents" className="block group">
-              <GlassCard hover className="p-6 transition-all duration-300 group-hover:border-purple-400/30">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
-                      Documents
+                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[var(--hff-sage)] transition-colors">
+                      Upload Documents
                     </h3>
-                    <p className="text-sm text-gray-500">Manage your files</p>
+                    <p className="text-sm text-gray-500">Manage your document library</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-sage)] group-hover:translate-x-1 transition-all" />
                 </div>
               </GlassCard>
             </Link>
@@ -595,9 +445,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[var(--hff-gold)] transition-colors">
-                      Profile
+                      Edit Profile
                     </h3>
-                    <p className="text-sm text-gray-500">Organization details</p>
+                    <p className="text-sm text-gray-500">Update organization details</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-gold)] group-hover:translate-x-1 transition-all" />
                 </div>

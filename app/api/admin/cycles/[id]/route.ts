@@ -86,15 +86,12 @@ export async function PUT(
       data: {
         loiOpenDate: data.loiOpenDate ? new Date(data.loiOpenDate) : null,
         loiDeadline: data.loiDeadline ? new Date(data.loiDeadline) : undefined,
-        loiReviewDeadline: data.loiReviewDeadline ? new Date(data.loiReviewDeadline) : null,
-        fullAppOpenDate: data.fullAppOpenDate ? new Date(data.fullAppOpenDate) : null,
         fullAppDeadline: data.fullAppDeadline ? new Date(data.fullAppDeadline) : null,
         reviewStartDate: data.reviewStartDate ? new Date(data.reviewStartDate) : null,
         decisionDate: data.decisionDate ? new Date(data.decisionDate) : null,
         maxRequestAmount: data.maxRequestAmount ? parseFloat(data.maxRequestAmount) : null,
         isActive: data.isActive,
-        acceptingLOIs: data.acceptingLOIs ?? false,
-        acceptingApplications: data.acceptingApplications ?? false,
+        acceptingApplications: data.acceptingApplications,
       },
     })
 
@@ -135,7 +132,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cycle not found' }, { status: 404 })
     }
 
-    // Check if cycle has applications or LOIs
+    // Check if cycle has applications
     const appCount = await prisma.application.count({
       where: {
         grantCycle: cycle.cycle,
@@ -143,17 +140,9 @@ export async function DELETE(
       },
     })
 
-    const loiCount = await prisma.letterOfInterest.count({
-      where: {
-        cycleConfigId: id,
-      },
-    })
-
-    if (appCount > 0 || loiCount > 0) {
+    if (appCount > 0) {
       return NextResponse.json(
-        {
-          error: `Cannot delete cycle with existing data. This cycle has ${loiCount} LOI(s) and ${appCount} application(s).`,
-        },
+        { error: `Cannot delete cycle with ${appCount} application(s). Please remove or reassign applications first.` },
         { status: 400 }
       )
     }
