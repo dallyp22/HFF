@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 // GET - Fetch a single LOI
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships?.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
     const loi = await prisma.letterOfInterest.findUnique({
       where: { id },
@@ -83,7 +84,7 @@ export async function GET(
     }
 
     // Check access: reviewers can see all, applicants only their org's
-    if (!isReviewer && loi.organizationId !== dbUser?.organizationId) {
+    if (!reviewerAccess && loi.organizationId !== dbUser?.organizationId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
@@ -117,7 +118,7 @@ export async function PATCH(
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships?.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
     const loi = await prisma.letterOfInterest.findUnique({
       where: { id },
@@ -132,12 +133,12 @@ export async function PATCH(
     }
 
     // Applicants can only edit their own org's LOI
-    if (!isReviewer && loi.organizationId !== dbUser?.organizationId) {
+    if (!reviewerAccess && loi.organizationId !== dbUser?.organizationId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Applicants can only edit DRAFT LOIs
-    if (!isReviewer && loi.status !== 'DRAFT') {
+    if (!reviewerAccess && loi.status !== 'DRAFT') {
       return NextResponse.json(
         { error: 'Cannot edit a submitted Letter of Interest' },
         { status: 400 }
