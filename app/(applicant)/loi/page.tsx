@@ -73,7 +73,7 @@ export default function LOIListPage() {
       try {
         const [loisRes, cyclesRes] = await Promise.all([
           fetch('/api/loi'),
-          fetch('/api/admin/cycles'),
+          fetch('/api/cycles'),
         ])
 
         if (loisRes.ok) {

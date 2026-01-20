@@ -37,7 +37,7 @@ export default function NewLOIPage() {
   useEffect(() => {
     async function fetchCycles() {
       try {
-        const response = await fetch('/api/admin/cycles')
+        const response = await fetch('/api/cycles')
         if (response.ok) {
           const data = await response.json()
           // Filter to only show cycles accepting LOIs
