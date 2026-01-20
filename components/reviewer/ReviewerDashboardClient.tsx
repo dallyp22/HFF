@@ -27,6 +27,7 @@ import {
   Sparkles,
   Eye,
   XCircle,
+  Folder,
 } from 'lucide-react'
 
 interface ReviewerDashboardClientProps {
@@ -47,6 +48,14 @@ interface ReviewerDashboardClientProps {
     approved: number
     declined: number
   }
+  loiStats: {
+    total: number
+    submitted: number
+    underReview: number
+    approved: number
+    declined: number
+    pendingReview: number
+  }
   totalRequested: number
   totalApproved: number
   organizationCount: number
@@ -58,6 +67,14 @@ interface ReviewerDashboardClientProps {
     organizationName: string
     amountRequested: number | null
   }>
+  needsLoiReview: Array<{
+    id: string
+    projectTitle: string | null
+    status: string
+    submittedAt: string | null
+    organizationName: string
+    grantRequestAmount: number | null
+  }>
 }
 
 const statusConfig = {
@@ -68,14 +85,23 @@ const statusConfig = {
   DECLINED: { color: 'bg-red-100 text-red-700', icon: XCircle, label: 'Declined' },
 }
 
+const loiStatusConfig = {
+  SUBMITTED: { color: 'bg-amber-100 text-amber-700', icon: FileText, label: 'Submitted' },
+  UNDER_REVIEW: { color: 'bg-blue-100 text-blue-700', icon: Eye, label: 'Under Review' },
+  APPROVED: { color: 'bg-green-100 text-green-700', icon: CheckCircle2, label: 'Approved' },
+  DECLINED: { color: 'bg-red-100 text-red-700', icon: XCircle, label: 'Declined' },
+}
+
 export function ReviewerDashboardClient({
   user,
   activeCycle,
   stats,
+  loiStats,
   totalRequested,
   totalApproved,
   organizationCount,
   needsAttention,
+  needsLoiReview,
 }: ReviewerDashboardClientProps) {
   const pendingReview = stats.submitted + stats.underReview
 
@@ -169,6 +195,87 @@ export function ReviewerDashboardClient({
             </GlassCard>
           </StaggerItem>
         </StaggerContainer>
+
+        {/* LOI Review Section */}
+        {loiStats.pendingReview > 0 && (
+          <FadeIn delay={0.12}>
+            <GlassCard variant="elevated" className="p-6 mb-8 border-l-4 border-l-amber-500">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-7 h-7 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {loiStats.pendingReview} LOI{loiStats.pendingReview !== 1 ? 's' : ''} Awaiting Review
+                    </h3>
+                    <p className="text-gray-600">
+                      Review Letters of Interest to invite applicants to submit full applications.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  asChild
+                  className="bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20"
+                >
+                  <Link href="/reviewer/lois?status=SUBMITTED">
+                    Review LOIs
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Quick LOI list */}
+              {needsLoiReview.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-amber-100">
+                  <div className="space-y-2">
+                    {needsLoiReview.slice(0, 3).map((loi, index) => {
+                      const config = loiStatusConfig[loi.status as keyof typeof loiStatusConfig]
+                      return (
+                        <motion.div
+                          key={loi.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 * index }}
+                        >
+                          <Link
+                            href={`/reviewer/lois/${loi.id}`}
+                            className="flex items-center justify-between p-3 rounded-lg bg-white/80 hover:bg-white transition-colors group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
+                                {loi.organizationName}
+                              </span>
+                              {loi.projectTitle && (
+                                <span className="text-sm text-gray-500 hidden md:inline">
+                                  — {loi.projectTitle}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {loi.grantRequestAmount && (
+                                <span className="text-sm text-gray-600">
+                                  ${loi.grantRequestAmount.toLocaleString()}
+                                </span>
+                              )}
+                              <span className={cn(
+                                'px-2 py-0.5 rounded-full text-xs font-medium',
+                                config?.color || 'bg-gray-100 text-gray-700'
+                              )}>
+                                {config?.label || loi.status}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+                            </div>
+                          </Link>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </GlassCard>
+          </FadeIn>
+        )}
 
         {/* Financial Overview */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -359,19 +466,38 @@ export function ReviewerDashboardClient({
         <FadeIn delay={0.3}>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         </FadeIn>
-        <StaggerContainer className="grid md:grid-cols-3 gap-4" staggerDelay={0.05}>
+        <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-4 gap-4" staggerDelay={0.05}>
+          <StaggerItem>
+            <Link href="/reviewer/lois" className="block group">
+              <GlassCard hover className="p-6 transition-all duration-300 group-hover:border-amber-400/30">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-amber-600 transition-colors">
+                      Letters of Interest
+                    </h3>
+                    <p className="text-sm text-gray-500">Review and approve LOIs</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+                </div>
+              </GlassCard>
+            </Link>
+          </StaggerItem>
+
           <StaggerItem>
             <Link href="/reviewer/applications" className="block group">
               <GlassCard hover className="p-6 transition-all duration-300 group-hover:border-[var(--hff-teal)]/30">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--hff-teal)] to-[var(--hff-teal-800)] flex items-center justify-center shadow-lg shadow-[var(--hff-teal)]/20 group-hover:scale-110 transition-transform">
-                    <FileText className="w-6 h-6 text-white" />
+                    <Folder className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[var(--hff-teal)] transition-colors">
-                      All Applications
+                      Applications
                     </h3>
-                    <p className="text-sm text-gray-500">Review and manage applications</p>
+                    <p className="text-sm text-gray-500">Review full applications</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-teal)] group-hover:translate-x-1 transition-all" />
                 </div>

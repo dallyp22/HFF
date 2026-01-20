@@ -157,17 +157,23 @@ export default function CyclesPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {cycle.isActive && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-[var(--hff-teal)] text-white">
                             <CheckCircle className="w-4 h-4" />
                             Active
                           </span>
                         )}
+                        {cycle.acceptingLOIs && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">
+                            <Clock className="w-4 h-4" />
+                            LOIs Open
+                          </span>
+                        )}
                         {cycle.acceptingApplications && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">
                             <Clock className="w-4 h-4" />
-                            Open
+                            Apps Open
                           </span>
                         )}
                       </div>
