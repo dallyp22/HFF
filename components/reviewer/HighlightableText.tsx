@@ -143,10 +143,22 @@ export function HighlightableText({
   } | null>(null)
 
   const [deleting, setDeleting] = useState<string | null>(null)
+  const tooltipHoveredRef = useRef(false)
+  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Ensure portal only renders on client
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  // Helper to dismiss tooltip only if not hovering over it
+  const scheduleTooltipDismiss = useCallback(() => {
+    if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
+    tooltipTimeoutRef.current = setTimeout(() => {
+      if (!tooltipHoveredRef.current) {
+        setTooltip(null)
+      }
+    }, 400)
   }, [])
 
   // ---------------------------------------------------------------
@@ -306,14 +318,7 @@ export function HighlightableText({
                 })
               }}
               onMouseLeave={() => {
-                // Small delay so users can move to the tooltip
-                setTimeout(() => {
-                  setTooltip((prev) => {
-                    // Only clear if it's still the same highlight
-                    if (prev?.highlight.id === primary.id) return null
-                    return prev
-                  })
-                }, 150)
+                scheduleTooltipDismiss()
               }}
             >
               {seg.text}
@@ -435,9 +440,13 @@ export function HighlightableText({
             zIndex: 99999,
           }}
           onMouseEnter={() => {
-            // Keep tooltip visible while hovering
+            tooltipHoveredRef.current = true
+            if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
           }}
-          onMouseLeave={() => setTooltip(null)}
+          onMouseLeave={() => {
+            tooltipHoveredRef.current = false
+            scheduleTooltipDismiss()
+          }}
         >
           {/* Arrow */}
           <div
