@@ -42,6 +42,22 @@ export async function POST(req: Request) {
       )
     }
 
+    // Check for existing application in same cycle (one per cycle enforcement)
+    const existingApplication = await prisma.application.findFirst({
+      where: {
+        organizationId: dbUser.organization.id,
+        grantCycle: activeCycle.cycle,
+        cycleYear: activeCycle.year,
+      },
+    })
+
+    if (existingApplication) {
+      return NextResponse.json(
+        { error: `Your organization already has an application for the ${activeCycle.cycle} ${activeCycle.year} cycle. Only one application per cycle is allowed.` },
+        { status: 400 }
+      )
+    }
+
     // Create draft application
     const application = await prisma.application.create({
       data: {

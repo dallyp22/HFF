@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { GlassCard } from '@/components/glass/GlassCard'
 import { GlassBadge } from '@/components/glass/GlassBadge'
 import { Button } from '@/components/ui/button'
@@ -39,6 +39,9 @@ import { StatusChangeDialog } from '@/components/reviewer/StatusChangeDialog'
 import { InfoRequestDialog } from '@/components/reviewer/InfoRequestDialog'
 import { VotingPanel } from '@/components/reviewer/VotingPanel'
 import { NotesPanel } from '@/components/reviewer/NotesPanel'
+import { AdminSynopsisPanel } from '@/components/reviewer/AdminSynopsisPanel'
+import { HighlightableText, type Highlight } from '@/components/reviewer/HighlightableText'
+import { BudgetAssessmentPanel } from '@/components/reviewer/BudgetAssessmentPanel'
 
 interface ApplicationDetailViewProps {
   application: any
@@ -88,10 +91,10 @@ const tabs = [
   { id: 'overview', label: 'Overview', icon: FileText },
   { id: 'funding', label: 'Funding', icon: DollarSign },
   { id: 'impact', label: 'Impact', icon: Target },
-  { id: 'voting', label: 'Voting', icon: ThumbsUp },
   { id: 'notes', label: 'Notes', icon: MessageCircle },
   { id: 'docs', label: 'Documents', icon: Folder },
   { id: 'history', label: 'History', icon: History },
+  { id: 'voting', label: 'Voting', icon: ThumbsUp },
 ]
 
 export function ApplicationDetailView({
@@ -103,6 +106,26 @@ export function ApplicationDetailView({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  const [highlights, setHighlights] = useState<Highlight[]>(application.highlights || [])
+
+  const fetchHighlights = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/applications/${application.id}/highlights`)
+      if (res.ok) {
+        const data = await res.json()
+        setHighlights(data)
+      }
+    } catch (error) {
+      console.error('Error fetching highlights:', error)
+    }
+  }, [application.id])
+
+  useEffect(() => {
+    // If highlights weren't included in the initial data, fetch them
+    if (!application.highlights || application.highlights.length === 0) {
+      fetchHighlights()
+    }
+  }, [application.highlights, fetchHighlights])
 
   const approveVotes = application.votes?.filter((v: any) => v.vote === 'APPROVE').length || 0
   const declineVotes = application.votes?.filter((v: any) => v.vote === 'DECLINE').length || 0
@@ -248,6 +271,22 @@ export function ApplicationDetailView({
 
         {/* Right Content - Tabbed Interface */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Admin Synopsis */}
+          {userIsAdmin && (
+            <FadeIn delay={0.12}>
+              <div className="px-4 pt-4">
+                <AdminSynopsisPanel
+                  entityId={application.id}
+                  entityType="application"
+                  adminSynopsis={application.adminSynopsis}
+                  adminSynopsisBy={application.adminSynopsisBy}
+                  adminSynopsisAt={application.adminSynopsisAt}
+                  userIsAdmin={userIsAdmin}
+                />
+              </div>
+            </FadeIn>
+          )}
+
           {/* Tab Navigation */}
           <FadeIn delay={0.15}>
             <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200/50 px-4">
@@ -308,7 +347,12 @@ export function ApplicationDetailView({
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'overview' && (
-                  <OverviewTab application={application} />
+                  <OverviewTab
+                    application={application}
+                    highlights={highlights}
+                    isAdmin={userIsAdmin}
+                    onHighlightChange={fetchHighlights}
+                  />
                 )}
                 {activeTab === 'funding' && (
                   <FundingTab
@@ -316,9 +360,17 @@ export function ApplicationDetailView({
                     amountRequested={amountRequested}
                     totalBudget={totalBudget}
                     percentageRequested={percentageRequested}
+                    applicationId={application.id}
                   />
                 )}
-                {activeTab === 'impact' && <ImpactTab application={application} />}
+                {activeTab === 'impact' && (
+                  <ImpactTab
+                    application={application}
+                    highlights={highlights}
+                    isAdmin={userIsAdmin}
+                    onHighlightChange={fetchHighlights}
+                  />
+                )}
                 {activeTab === 'voting' && (
                   <VotingPanel
                     applicationId={application.id}
@@ -386,7 +438,17 @@ export function ApplicationDetailView({
 }
 
 // Overview Tab Component
-function OverviewTab({ application }: { application: any }) {
+function OverviewTab({
+  application,
+  highlights,
+  isAdmin,
+  onHighlightChange,
+}: {
+  application: any
+  highlights: Highlight[]
+  isAdmin: boolean
+  onHighlightChange: () => void
+}) {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Project Overview */}
@@ -395,14 +457,36 @@ function OverviewTab({ application }: { application: any }) {
           <FileText className="w-4 h-4 text-[var(--hff-teal)]" />
           Project Overview
         </h3>
-        <p className="text-gray-700 leading-relaxed mb-4">
-          {application.projectDescription || 'No description provided'}
-        </p>
+        <div className="text-gray-700 mb-4">
+          {application.projectDescription ? (
+            <HighlightableText
+              text={application.projectDescription}
+              fieldName="projectDescription"
+              applicationId={application.id}
+              highlights={highlights}
+              isAdmin={isAdmin}
+              onHighlightChange={onHighlightChange}
+            />
+          ) : (
+            <span className="text-gray-400 italic">No description provided</span>
+          )}
+        </div>
         <div className="pt-3 border-t border-gray-100">
-          <p className="text-sm">
-            <span className="font-medium text-gray-900">Goals:</span>{' '}
-            <span className="text-gray-600">{application.projectGoals || 'Not specified'}</span>
-          </p>
+          <p className="text-sm font-medium text-gray-900 mb-1">Goals:</p>
+          <div className="text-sm text-gray-600">
+            {application.projectGoals ? (
+              <HighlightableText
+                text={application.projectGoals}
+                fieldName="projectGoals"
+                applicationId={application.id}
+                highlights={highlights}
+                isAdmin={isAdmin}
+                onHighlightChange={onHighlightChange}
+              />
+            ) : (
+              <span className="text-gray-400 italic">Not specified</span>
+            )}
+          </div>
         </div>
       </GlassCard>
 
@@ -491,11 +575,13 @@ function FundingTab({
   amountRequested,
   totalBudget,
   percentageRequested,
+  applicationId,
 }: {
   application: any
   amountRequested: number
   totalBudget: number
   percentageRequested: number
+  applicationId: string
 }) {
   return (
     <div className="space-y-6 max-w-4xl">
@@ -540,29 +626,151 @@ function FundingTab({
         </div>
       </GlassCard>
 
-      {/* Other Funding */}
+      {/* Structured Funding Sources */}
       <GlassCard className="p-5">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
           <TrendingUp className="w-4 h-4 text-[var(--hff-teal)]" />
           Other Funding Sources
         </h3>
         <div className="space-y-4">
+          {/* Confirmed Funding */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">Other Sources</p>
-            <p className="text-gray-600">{application.otherFundingSources || 'None specified'}</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">Confirmed Funding</p>
+            {application.confirmedFundingSources && (application.confirmedFundingSources as any[]).length > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Source</th>
+                      <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(application.confirmedFundingSources as any[]).map((source: any, i: number) => (
+                      <tr key={i}>
+                        <td className="px-3 py-2 text-gray-700">{source.name}</td>
+                        <td className="px-3 py-2 text-right text-gray-900 font-medium">
+                          ${Number(source.amount).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="bg-gray-50 font-semibold">
+                      <td className="px-3 py-2 text-gray-700">Total Confirmed</td>
+                      <td className="px-3 py-2 text-right text-[var(--hff-teal)]">
+                        ${(application.confirmedFundingSources as any[]).reduce((sum: number, s: any) => sum + Number(s.amount || 0), 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-400 italic text-sm">None specified</p>
+            )}
           </div>
+
+          {/* Pending Funding */}
           <div className="pt-3 border-t border-gray-100">
-            <p className="text-sm font-medium text-gray-700 mb-1">Previous HFF Grants</p>
-            <p className="text-gray-600">{application.previousHFFGrants || 'None'}</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">Pending Funding</p>
+            {application.pendingFundingSources && (application.pendingFundingSources as any[]).length > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Source</th>
+                      <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(application.pendingFundingSources as any[]).map((source: any, i: number) => (
+                      <tr key={i}>
+                        <td className="px-3 py-2 text-gray-700">{source.name}</td>
+                        <td className="px-3 py-2 text-right text-gray-900 font-medium">
+                          ${Number(source.amount).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="bg-gray-50 font-semibold">
+                      <td className="px-3 py-2 text-gray-700">Total Pending</td>
+                      <td className="px-3 py-2 text-right text-amber-600">
+                        ${(application.pendingFundingSources as any[]).reduce((sum: number, s: any) => sum + Number(s.amount || 0), 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-400 italic text-sm">None specified</p>
+            )}
+          </div>
+
+          {/* Legacy fallback for older applications */}
+          {!application.confirmedFundingSources && !application.pendingFundingSources && application.otherFundingSources && (
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1">Other Sources</p>
+              <p className="text-gray-600">{application.otherFundingSources}</p>
+            </div>
+          )}
+
+          {/* Previous HFF Grants */}
+          <div className="pt-3 border-t border-gray-100">
+            <p className="text-sm font-medium text-gray-700 mb-2">Previous HFF Grants</p>
+            {application.noGrantsReceived ? (
+              <p className="text-gray-500 italic text-sm">No grants received to date</p>
+            ) : application.previousHFFGrantsData && (application.previousHFFGrantsData as any[]).length > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Date</th>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Project</th>
+                      <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(application.previousHFFGrantsData as any[]).map((grant: any, i: number) => (
+                      <tr key={i}>
+                        <td className="px-3 py-2 text-gray-700">{grant.date || 'N/A'}</td>
+                        <td className="px-3 py-2 text-gray-700">{grant.projectTitle || 'N/A'}</td>
+                        <td className="px-3 py-2 text-right text-gray-900 font-medium">
+                          ${Number(grant.amount || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : application.previousHFFGrants ? (
+              <p className="text-gray-600">{application.previousHFFGrants}</p>
+            ) : (
+              <p className="text-gray-400 italic text-sm">None</p>
+            )}
           </div>
         </div>
       </GlassCard>
+
+      {/* Budget Assessment Scoring Rubric */}
+      <BudgetAssessmentPanel
+        applicationId={applicationId}
+        budgetBreakdown={application.budgetBreakdown}
+        totalProjectBudget={totalBudget}
+        amountRequested={amountRequested}
+      />
     </div>
   )
 }
 
 // Impact Tab Component
-function ImpactTab({ application }: { application: any }) {
+function ImpactTab({
+  application,
+  highlights,
+  isAdmin,
+  onHighlightChange,
+}: {
+  application: any
+  highlights: Highlight[]
+  isAdmin: boolean
+  onHighlightChange: () => void
+}) {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Target Population */}
@@ -592,7 +800,20 @@ function ImpactTab({ application }: { application: any }) {
         <div className="space-y-3 pt-4 border-t border-gray-100">
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Population Description</p>
-            <p className="text-gray-600">{application.targetPopulation || 'Not specified'}</p>
+            <div className="text-gray-600">
+              {application.targetPopulation ? (
+                <HighlightableText
+                  text={application.targetPopulation}
+                  fieldName="targetPopulation"
+                  applicationId={application.id}
+                  highlights={highlights}
+                  isAdmin={isAdmin}
+                  onHighlightChange={onHighlightChange}
+                />
+              ) : (
+                <span className="text-gray-400 italic">Not specified</span>
+              )}
+            </div>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Poverty Indicators</p>
@@ -610,7 +831,20 @@ function ImpactTab({ application }: { application: any }) {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Expected Outcomes</p>
-            <p className="text-gray-600">{application.expectedOutcomes || 'Not specified'}</p>
+            <div className="text-gray-600">
+              {application.expectedOutcomes ? (
+                <HighlightableText
+                  text={application.expectedOutcomes}
+                  fieldName="expectedOutcomes"
+                  applicationId={application.id}
+                  highlights={highlights}
+                  isAdmin={isAdmin}
+                  onHighlightChange={onHighlightChange}
+                />
+              ) : (
+                <span className="text-gray-400 italic">Not specified</span>
+              )}
+            </div>
           </div>
           <div className="pt-3 border-t border-gray-100">
             <p className="text-sm font-medium text-gray-700 mb-1">Measurement Plan</p>

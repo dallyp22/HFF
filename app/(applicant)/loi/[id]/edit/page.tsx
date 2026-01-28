@@ -38,8 +38,7 @@ interface FormData {
   primaryContactPhone: string
   primaryContactEmail: string
   executiveDirector: string
-  // Focus & Type
-  focusArea: string
+  // Expenditure Type
   expenditureType: string
   // Project Questions
   isNewProject: string
@@ -49,6 +48,7 @@ interface FormData {
   // Project Details
   projectTitle: string
   projectDescription: string
+  projectGoals: string
   // Financial
   totalProjectAmount: string
   grantRequestAmount: string
@@ -65,10 +65,10 @@ const steps = [
   },
   {
     id: 2,
-    title: 'Focus Area',
-    description: 'Foundation alignment',
+    title: 'Expenditure Type',
+    description: 'Type of funding request',
     icon: Target,
-    fields: ['focusArea', 'expenditureType'],
+    fields: ['expenditureType'],
   },
   {
     id: 3,
@@ -82,7 +82,7 @@ const steps = [
     title: 'Project Overview',
     description: 'Describe your project',
     icon: FileText,
-    fields: ['projectTitle', 'projectDescription'],
+    fields: ['projectTitle', 'projectDescription', 'projectGoals'],
   },
   {
     id: 5,
@@ -98,12 +98,6 @@ const steps = [
     icon: Send,
     fields: [],
   },
-]
-
-const focusAreaOptions = [
-  { value: 'HUMAN_HEALTH', label: 'Human Health' },
-  { value: 'EDUCATION', label: 'Education' },
-  { value: 'COMMUNITY_WELLBEING', label: 'Community Well-Being' },
 ]
 
 const expenditureOptions = [
@@ -132,7 +126,6 @@ export default function EditLOIPage() {
       primaryContactPhone: '',
       primaryContactEmail: '',
       executiveDirector: '',
-      focusArea: '',
       expenditureType: '',
       isNewProject: '',
       newProjectExplanation: '',
@@ -140,6 +133,7 @@ export default function EditLOIPage() {
       capacityExplanation: '',
       projectTitle: '',
       projectDescription: '',
+      projectGoals: '',
       totalProjectAmount: '',
       grantRequestAmount: '',
       budgetOutline: '',
@@ -151,6 +145,7 @@ export default function EditLOIPage() {
 
   // Word count helpers
   const descriptionWordCount = watchedValues.projectDescription?.trim().split(/\s+/).filter(Boolean).length || 0
+  const goalsWordCount = watchedValues.projectGoals?.trim().split(/\s+/).filter(Boolean).length || 0
   const budgetWordCount = watchedValues.budgetOutline?.trim().split(/\s+/).filter(Boolean).length || 0
 
   // Calculate step completion
@@ -161,7 +156,7 @@ export default function EditLOIPage() {
 
       const requiredFields: Record<number, string[]> = {
         1: ['primaryContactName', 'primaryContactEmail'],
-        2: ['focusArea', 'expenditureType'],
+        2: ['expenditureType'],
         3: [], // Optional questions
         4: ['projectTitle', 'projectDescription'],
         5: ['totalProjectAmount', 'grantRequestAmount', 'budgetOutline'],
@@ -217,7 +212,6 @@ export default function EditLOIPage() {
           primaryContactPhone: data.primaryContactPhone || '',
           primaryContactEmail: data.primaryContactEmail || '',
           executiveDirector: data.executiveDirector || '',
-          focusArea: data.focusArea || '',
           expenditureType: data.expenditureType || '',
           isNewProject: data.isNewProject === true ? 'yes' : data.isNewProject === false ? 'no' : '',
           newProjectExplanation: data.newProjectExplanation || '',
@@ -225,6 +219,7 @@ export default function EditLOIPage() {
           capacityExplanation: data.capacityExplanation || '',
           projectTitle: data.projectTitle || '',
           projectDescription: data.projectDescription || '',
+          projectGoals: data.projectGoals || '',
           totalProjectAmount: data.totalProjectAmount || '',
           grantRequestAmount: data.grantRequestAmount || '',
           budgetOutline: data.budgetOutline || '',
@@ -265,11 +260,15 @@ export default function EditLOIPage() {
         currentStep,
       }
 
-      await fetch(`/api/loi/${loiId}`, {
+      const response = await fetch(`/api/loi/${loiId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+
+      if (!response.ok) {
+        throw new Error('Save failed')
+      }
 
       setLastSaved(new Date())
       if (!isAutoSave) {
@@ -280,14 +279,20 @@ export default function EditLOIPage() {
       if (!isAutoSave) {
         toast.error('Failed to save')
       }
+      throw error
     } finally {
       setSaving(false)
     }
   }
 
   async function handleSaveDraft() {
-    await saveProgress(getValues())
-    router.push('/loi')
+    try {
+      await saveProgress(getValues())
+      router.push('/loi')
+    } catch (error) {
+      console.error('Save draft failed:', error)
+      toast.error('Failed to save draft. Please try again.')
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -564,51 +569,9 @@ export default function EditLOIPage() {
                   </div>
                 )}
 
-                {/* Step 2: Focus Area */}
+                {/* Step 2: Expenditure Type */}
                 {currentStep === 2 && (
                   <div className="space-y-8">
-                    <div className="space-y-4">
-                      <Label className="text-sm font-medium text-gray-700">
-                        Foundation Focus Area <span className="text-red-500">*</span>
-                      </Label>
-                      <p className="text-xs text-gray-500">
-                        Select the ONE area that best aligns with your project
-                      </p>
-                      <div className="grid gap-3">
-                        {focusAreaOptions.map((option) => (
-                          <label
-                            key={option.value}
-                            className={cn(
-                              'flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all',
-                              watchedValues.focusArea === option.value
-                                ? 'border-[var(--hff-teal)] bg-[var(--hff-teal)]/5'
-                                : 'border-gray-200 hover:border-gray-300'
-                            )}
-                          >
-                            <input
-                              type="radio"
-                              {...register('focusArea')}
-                              value={option.value}
-                              className="sr-only"
-                            />
-                            <div
-                              className={cn(
-                                'w-5 h-5 rounded-full border-2 flex items-center justify-center',
-                                watchedValues.focusArea === option.value
-                                  ? 'border-[var(--hff-teal)]'
-                                  : 'border-gray-300'
-                              )}
-                            >
-                              {watchedValues.focusArea === option.value && (
-                                <div className="w-3 h-3 rounded-full bg-[var(--hff-teal)]" />
-                              )}
-                            </div>
-                            <span className="font-medium text-gray-900">{option.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="space-y-4">
                       <Label className="text-sm font-medium text-gray-700">
                         Expenditure Type <span className="text-red-500">*</span>
@@ -774,6 +737,36 @@ export default function EditLOIPage() {
                       )}
                     </div>
 
+                    {/* Project Goals */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="projectGoals" className="text-sm font-medium text-gray-700">
+                          Project Goals
+                        </Label>
+                        <span className={cn(
+                          'text-xs',
+                          goalsWordCount > 500 ? 'text-red-600 font-medium' : 'text-gray-500'
+                        )}>
+                          {goalsWordCount}/500 words
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-1">
+                        What are the specific goals you hope to achieve with this project?
+                      </p>
+                      <Textarea
+                        id="projectGoals"
+                        {...register('projectGoals')}
+                        placeholder="Describe the goals and objectives of your project..."
+                        rows={6}
+                        className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                      />
+                      {goalsWordCount > 500 && (
+                        <p className="text-xs text-red-600">
+                          Please reduce your project goals to 500 words or fewer
+                        </p>
+                      )}
+                    </div>
+
                     {/* Photo upload hint */}
                     <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
                       <div className="flex items-start gap-3">
@@ -886,9 +879,9 @@ export default function EditLOIPage() {
                           <p className="font-medium">{watchedValues.projectTitle || '—'}</p>
                         </div>
                         <div className="p-4 rounded-xl bg-gray-50">
-                          <p className="text-xs text-gray-500 mb-1">Focus Area</p>
+                          <p className="text-xs text-gray-500 mb-1">Expenditure Type</p>
                           <p className="font-medium">
-                            {focusAreaOptions.find(o => o.value === watchedValues.focusArea)?.label || '—'}
+                            {expenditureOptions.find(o => o.value === watchedValues.expenditureType)?.label || '—'}
                           </p>
                         </div>
                         <div className="p-4 rounded-xl bg-gray-50">
@@ -915,6 +908,15 @@ export default function EditLOIPage() {
                           {watchedValues.projectDescription || '—'}
                         </p>
                       </div>
+
+                      {watchedValues.projectGoals && (
+                        <div className="p-4 rounded-xl bg-gray-50">
+                          <p className="text-xs text-gray-500 mb-1">Project Goals</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                            {watchedValues.projectGoals}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Deadline reminder */}
@@ -990,7 +992,7 @@ export default function EditLOIPage() {
               ) : (
                 <Button
                   type="submit"
-                  disabled={submitting || overallProgress < 60 || descriptionWordCount > 500 || budgetWordCount > 250}
+                  disabled={submitting || overallProgress < 60 || descriptionWordCount > 500 || goalsWordCount > 500 || budgetWordCount > 250}
                   className="rounded-xl bg-gradient-to-r from-[var(--hff-teal)] to-[var(--hff-sage)] hover:opacity-90 shadow-lg shadow-[var(--hff-teal)]/20"
                 >
                   {submitting ? (

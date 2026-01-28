@@ -262,45 +262,7 @@ export function EditSettingsDialog({
                   )}
                 />
 
-                <div className="space-y-2">
-                  <FormLabel>Focus Areas</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      value={focusAreaInput}
-                      onChange={(e) => setFocusAreaInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          addFocusArea()
-                        }
-                      }}
-                      placeholder="Enter focus area and press Enter"
-                      disabled={isSubmitting}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={addFocusArea}
-                      disabled={isSubmitting || !focusAreaInput.trim()}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {localFocusAreas.map((area, index) => (
-                      <Badge key={index} variant="outline" className="pl-2 pr-1">
-                        {area}
-                        <button
-                          type="button"
-                          onClick={() => removeFocusArea(area)}
-                          className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
-                          disabled={isSubmitting}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+                {/* Focus Areas removed from UI per client request */}
               </TabsContent>
 
               {/* Contact Tab */}

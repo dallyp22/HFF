@@ -31,6 +31,15 @@ export const organizationProfileSchema = z.object({
   executiveDirectorEmail: z.string().email('Invalid email address'),
   executiveDirectorPhone: z.string().min(10, 'Phone number is required'),
 
+  // Secondary Contact (Development Director / Grants Contact)
+  devDirectorName: z.string().optional().or(z.literal('')),
+  devDirectorEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
+  devDirectorPhone: z.string().optional().or(z.literal('')),
+  devDirectorTitle: z.string().optional().or(z.literal('')),
+
+  // Organization Description
+  organizationDescription: z.string().optional().or(z.literal('')),
+
   // Organizational Capacity
   fullTimeStaff: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(0).optional()),
   partTimeStaff: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().int().min(0).optional()),

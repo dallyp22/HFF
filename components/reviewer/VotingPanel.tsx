@@ -53,7 +53,7 @@ export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) 
   const [reviewers, setReviewers] = useState<Reviewer[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedVote, setSelectedVote] = useState<'APPROVE' | 'DECLINE' | ''>('')
+  const [selectedVote, setSelectedVote] = useState<'APPROVE' | 'DECLINE' | 'ABSTAIN' | ''>('')
   const [reasoning, setReasoning] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -296,6 +296,21 @@ export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) 
                   />
                   <span className="font-medium">Decline</span>
                 </button>
+                <button
+                  onClick={() => setSelectedVote('ABSTAIN')}
+                  className={`flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                    selectedVote === 'ABSTAIN'
+                      ? 'border-gray-500 bg-gray-50 text-gray-700'
+                      : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50/50'
+                  }`}
+                >
+                  <Minus
+                    className={`w-6 h-6 ${
+                      selectedVote === 'ABSTAIN' ? 'text-gray-600' : 'text-gray-400'
+                    }`}
+                  />
+                  <span className="font-medium">Abstain</span>
+                </button>
               </div>
 
               {/* Reasoning */}
@@ -325,7 +340,9 @@ export function VotingPanel({ applicationId, currentUserId }: VotingPanelProps) 
                       ? 'bg-emerald-600 hover:bg-emerald-700'
                       : selectedVote === 'DECLINE'
                         ? 'bg-red-600 hover:bg-red-700'
-                        : ''
+                        : selectedVote === 'ABSTAIN'
+                          ? 'bg-gray-600 hover:bg-gray-700'
+                          : ''
                   }
                 >
                   {submitting ? 'Submitting...' : 'Submit Vote'}

@@ -421,6 +421,29 @@ export default function ProfileEditPage() {
                   </p>
                 )}
               </div>
+
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="organizationDescription">Organization Description</Label>
+                  <span className={`text-xs ${
+                    (form.watch('organizationDescription')?.trim().split(/\s+/).filter(Boolean).length || 0) > 1000
+                      ? 'text-red-600 font-medium'
+                      : 'text-gray-500'
+                  }`}>
+                    {form.watch('organizationDescription')?.trim().split(/\s+/).filter(Boolean).length || 0}/1000 words
+                  </span>
+                </div>
+                <Textarea
+                  id="organizationDescription"
+                  {...form.register('organizationDescription')}
+                  placeholder="Provide a detailed description of your organization, its programs, and the communities it serves..."
+                  rows={6}
+                  className="bg-white/50"
+                />
+                <p className="text-xs text-gray-500">
+                  A more detailed description of your organization, separate from the mission statement.
+                </p>
+              </div>
             </GlassCard>
           </FadeIn>
 
@@ -521,6 +544,60 @@ export default function ProfileEditPage() {
                     id="executiveDirectorPhone"
                     {...form.register('executiveDirectorPhone')}
                     placeholder="(402) 555-0101"
+                    className="bg-white/50"
+                  />
+                </div>
+              </div>
+            </GlassCard>
+          </FadeIn>
+
+          {/* Development Director / Grants Contact */}
+          <FadeIn delay={0.37}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <Users className="w-5 h-5 text-[var(--hff-teal)]" />
+                Development Director / Grants Contact
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">Optional secondary contact information</p>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="devDirectorName">Name</Label>
+                  <Input
+                    id="devDirectorName"
+                    {...form.register('devDirectorName')}
+                    placeholder="Full name"
+                    className="bg-white/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="devDirectorTitle">Title</Label>
+                  <Input
+                    id="devDirectorTitle"
+                    {...form.register('devDirectorTitle')}
+                    placeholder="Development Director"
+                    className="bg-white/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="devDirectorEmail">Email</Label>
+                  <Input
+                    id="devDirectorEmail"
+                    type="email"
+                    {...form.register('devDirectorEmail')}
+                    placeholder="director@example.org"
+                    className="bg-white/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="devDirectorPhone">Phone</Label>
+                  <Input
+                    id="devDirectorPhone"
+                    {...form.register('devDirectorPhone')}
+                    placeholder="(402) 555-0102"
                     className="bg-white/50"
                   />
                 </div>

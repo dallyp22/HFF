@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { GlassCard } from '@/components/glass/GlassCard'
 import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/motion/FadeIn'
 import { AnimatedCounter } from '@/components/motion/AnimatedCounter'
+import { formatFileSize } from '@/lib/storage'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Building2,
   ArrowLeft,
@@ -22,7 +24,29 @@ import {
   Clock,
   XCircle,
   AlertCircle,
+  FolderOpen,
+  Download,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  FileSpreadsheet,
+  Shield,
+  FileCheck,
+  File,
 } from 'lucide-react'
+
+interface OrganizationDocument {
+  id: string
+  name: string
+  type: string
+  fileName: string
+  fileSize: number
+  mimeType: string
+  storageUrl: string
+  documentYear: number | null
+  uploadedAt: string
+  uploadedByName: string
+}
 
 interface OrganizationDetailClientProps {
   organization: {
@@ -53,6 +77,37 @@ interface OrganizationDetailClientProps {
     cycleYear: number
     amountRequested: number | null
   }[]
+  documents: OrganizationDocument[]
+}
+
+const docTypeLabels: Record<string, string> = {
+  FORM_990: 'Form 990',
+  FORM_990_EZ: 'Form 990-EZ',
+  FORM_990_N: 'Form 990-N',
+  FINANCIAL_STATEMENT: 'Financial Statement',
+  AUDIT_REPORT: 'Audit Report',
+  PROJECT_NARRATIVE: 'Project Narrative',
+  PROJECT_BUDGET: 'Project Budget',
+  BOARD_LIST: 'Board List',
+  IRS_DETERMINATION: 'IRS Determination Letter',
+  ANNUAL_REPORT: 'Annual Report',
+  ANNUAL_ORG_BUDGET: 'Annual Org Budget',
+  END_OF_YEAR_FINANCIAL: 'End of Year Financial',
+  OTHER: 'Other',
+}
+
+const docTypeIcons: Record<string, typeof FileText> = {
+  FORM_990: FileSpreadsheet,
+  FORM_990_EZ: FileSpreadsheet,
+  FORM_990_N: FileSpreadsheet,
+  FINANCIAL_STATEMENT: FileCheck,
+  AUDIT_REPORT: FileCheck,
+  IRS_DETERMINATION: Shield,
+  BOARD_LIST: FileText,
+  ANNUAL_REPORT: FileText,
+  ANNUAL_ORG_BUDGET: FileSpreadsheet,
+  END_OF_YEAR_FINANCIAL: FileCheck,
+  OTHER: File,
 }
 
 const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
@@ -74,7 +129,10 @@ const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
 export function OrganizationDetailClient({
   organization,
   applications,
+  documents,
 }: OrganizationDetailClientProps) {
+  const [previewDocId, setPreviewDocId] = useState<string | null>(null)
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
@@ -283,8 +341,136 @@ export function OrganizationDetailClient({
           </FadeIn>
         )}
 
-        {/* Grant History */}
+        {/* Organization Documents */}
         <FadeIn delay={0.25}>
+          <GlassCard className="p-6 mb-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+              <FolderOpen className="w-5 h-5 text-[var(--hff-teal)]" />
+              Organization Documents
+            </h2>
+
+            {documents.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
+                  <FolderOpen className="w-7 h-7 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Documents Uploaded</h3>
+                <p className="text-gray-500">
+                  This organization has not uploaded any documents yet.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map((doc, index) => {
+                  const Icon = docTypeIcons[doc.type] || File
+                  const isPdf = doc.mimeType === 'application/pdf'
+                  const isPreviewOpen = previewDocId === doc.id
+
+                  return (
+                    <motion.div
+                      key={doc.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <div className="rounded-xl bg-gray-50 overflow-hidden">
+                        {/* Document Row */}
+                        <div className="flex items-center justify-between p-4">
+                          <div className="flex items-center gap-4 min-w-0 flex-1">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--hff-teal)]/10 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-5 h-5 text-[var(--hff-teal)]" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-medium text-gray-900 truncate">
+                                  {doc.name}
+                                </p>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--hff-teal)]/10 text-[var(--hff-teal)]">
+                                  {docTypeLabels[doc.type] || doc.type}
+                                </span>
+                                {doc.documentYear && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                                    {doc.documentYear}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-500 mt-0.5">
+                                {doc.fileName} &middot; {formatFileSize(doc.fileSize)} &middot; Uploaded{' '}
+                                {new Date(doc.uploadedAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                                {doc.uploadedByName && (
+                                  <span> by {doc.uploadedByName}</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                            {isPdf && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5"
+                                onClick={() =>
+                                  setPreviewDocId(isPreviewOpen ? null : doc.id)
+                                }
+                              >
+                                <Eye className="w-4 h-4" />
+                                {isPreviewOpen ? 'Hide' : 'Preview'}
+                                {isPreviewOpen ? (
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                )}
+                              </Button>
+                            )}
+                            <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                              <a
+                                href={doc.storageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Download className="w-4 h-4" />
+                                Download
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Inline PDF Preview */}
+                        <AnimatePresence>
+                          {isPdf && isPreviewOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-4 pb-4">
+                                <iframe
+                                  src={doc.storageUrl}
+                                  className="w-full h-[500px] rounded-lg border border-gray-200"
+                                  title={`Preview: ${doc.name}`}
+                                />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            )}
+          </GlassCard>
+        </FadeIn>
+
+        {/* Grant History */}
+        <FadeIn delay={0.3}>
           <GlassCard className="p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
               <FileText className="w-5 h-5 text-[var(--hff-teal)]" />

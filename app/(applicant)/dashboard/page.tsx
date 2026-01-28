@@ -199,14 +199,23 @@ export default function DashboardPage() {
               <span className="text-sm font-medium">Applicant Portal</span>
             </motion.div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-              Welcome back,{' '}
-              <span className="bg-gradient-to-r from-[var(--hff-teal)] to-[var(--hff-sage)] bg-clip-text text-transparent">
-                {clerkUser?.firstName || 'there'}
-              </span>
+              Welcome back{clerkUser?.firstName ? ',' : ''}{' '}
+              {clerkUser?.firstName && (
+                <span className="bg-gradient-to-r from-[var(--hff-teal)] to-[var(--hff-sage)] bg-clip-text text-transparent">
+                  {clerkUser.firstName}
+                </span>
+              )}
             </h1>
             <p className="text-lg text-gray-600">
               {organization ? organization.legalName : 'Complete your profile to start applying for grants'}
             </p>
+          </div>
+        </FadeIn>
+
+        {/* Capital Requests Notice */}
+        <FadeIn delay={0.05}>
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+            <strong>Capital Requests:</strong> Capital Requests must go through the Foundation Director. Do not apply for a Capital Grant through this portal.
           </div>
         </FadeIn>
 

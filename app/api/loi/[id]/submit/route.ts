@@ -59,7 +59,6 @@ export async function POST(
 
     // Validate required fields
     const requiredFields = {
-      focusArea: 'Foundation Focus Area',
       expenditureType: 'Expenditure Type',
       projectTitle: 'Project Title',
       projectDescription: 'Project Description',
@@ -91,6 +90,17 @@ export async function POST(
       if (wordCount > 500) {
         return NextResponse.json(
           { error: `Project description exceeds 500 word limit (${wordCount} words)` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate project goals length (500 words max)
+    if (loi.projectGoals) {
+      const wordCount = loi.projectGoals.trim().split(/\s+/).length
+      if (wordCount > 500) {
+        return NextResponse.json(
+          { error: `Project goals exceeds 500 word limit (${wordCount} words)` },
           { status: 400 }
         )
       }

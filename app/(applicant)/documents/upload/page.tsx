@@ -36,6 +36,8 @@ const DOCUMENT_TYPES = [
   { value: 'FORM_990_N', label: 'Form 990-N' },
   { value: 'IRS_DETERMINATION', label: 'IRS Determination Letter' },
   { value: 'FINANCIAL_STATEMENT', label: 'Financial Statement' },
+  { value: 'ANNUAL_ORG_BUDGET', label: 'Annual Organization Budget (Most Recent Fiscal Year)' },
+  { value: 'END_OF_YEAR_FINANCIAL', label: 'End of Year Financial Report (Most Recent Fiscal Year)' },
   { value: 'AUDIT_REPORT', label: 'Audit Report' },
   { value: 'BOARD_LIST', label: 'Board of Directors List' },
   { value: 'ANNUAL_REPORT', label: 'Annual Report' },
@@ -47,12 +49,14 @@ const DOCUMENT_TYPES = [
 export default function DocumentUploadPage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
   const [documentType, setDocumentType] = useState('')
   const [documentName, setDocumentName] = useState('')
   const [description, setDescription] = useState('')
   const [documentYear, setDocumentYear] = useState('')
   const [dragActive, setDragActive] = useState(false)
+
+  const uploading = uploadStatus === 'uploading'
 
   function handleDrag(e: React.DragEvent) {
     e.preventDefault()
@@ -109,7 +113,7 @@ export default function DocumentUploadPage() {
       return
     }
 
-    setUploading(true)
+    setUploadStatus('uploading')
 
     try {
       const orgResponse = await fetch('/api/organizations')
@@ -139,17 +143,18 @@ export default function DocumentUploadPage() {
       })
 
       if (response.ok) {
+        setUploadStatus('success')
         toast.success('Document uploaded successfully!')
         router.push('/documents')
       } else {
+        setUploadStatus('error')
         const error = await response.json()
         toast.error(error.error || 'Failed to upload document')
       }
     } catch (error) {
+      setUploadStatus('error')
       console.error('Error uploading document:', error)
       toast.error('Failed to upload document')
-    } finally {
-      setUploading(false)
     }
   }
 
@@ -224,21 +229,36 @@ export default function DocumentUploadPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="border rounded-xl p-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200"
+                  className={`border rounded-xl p-6 ${
+                    uploadStatus === 'error'
+                      ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200'
+                      : 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200'
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-emerald-600" />
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        uploadStatus === 'error' ? 'bg-red-100' : 'bg-emerald-100'
+                      }`}>
+                        <FileText className={`h-6 w-6 ${
+                          uploadStatus === 'error' ? 'text-red-600' : 'text-emerald-600'
+                        }`} />
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{file.name}</p>
                         <p className="text-sm text-gray-600">{formatFileSize(file.size)}</p>
+                        {uploadStatus === 'error' && (
+                          <p className="text-sm text-red-600 mt-1">Upload failed. Please try again.</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-emerald-600" />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
+                      {uploadStatus === 'error' ? (
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      ) : (
+                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                      )}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setFile(null); setUploadStatus('idle') }}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>

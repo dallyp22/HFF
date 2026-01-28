@@ -205,15 +205,7 @@ export function CycleFormDialog({ open, onOpenChange, cycle, mode }: CycleFormDi
                 <p className="text-xs text-gray-500">When reviewers begin evaluating applications</p>
               </div>
 
-              <div className="space-y-2">
-                <Label>Decision Date</Label>
-                <Input
-                  type="date"
-                  value={formData.decisionDate}
-                  onChange={(e) => setFormData({ ...formData, decisionDate: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">When grant decisions will be made</p>
-              </div>
+              {/* Decision Date hidden from UI but kept in schema for backward compatibility */}
             </div>
           </div>
 

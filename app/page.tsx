@@ -138,6 +138,13 @@ export default function HomePage() {
                   </p>
                 </StaggerItem>
 
+                {/* Capital Requests Notice */}
+                <StaggerItem>
+                  <div className="max-w-2xl mx-auto mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                    <strong>Capital Requests:</strong> Capital Requests must go through the Foundation Director. Do not apply for a Capital Grant through this portal.
+                  </div>
+                </StaggerItem>
+
                 {/* CTA Buttons */}
                 <StaggerItem>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -161,6 +168,18 @@ export default function HomePage() {
                         className="text-lg px-8 py-6 rounded-full border-2 hover:bg-[var(--hff-teal)]/5"
                       >
                         <Link href="/eligibility">View Eligibility</Link>
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        asChild
+                        className="text-lg px-8 py-6 rounded-full border-2 hover:bg-[var(--hff-teal)]/5"
+                      >
+                        <Link href="/sample-loi.pdf" target="_blank">
+                          View Sample LOI (PDF)
+                        </Link>
                       </Button>
                     </motion.div>
                   </div>

@@ -181,14 +181,6 @@ export default function CyclesPage() {
 
                     {/* Details */}
                     <div className="flex flex-wrap items-center gap-6 mb-4">
-                      {cycle.decisionDate && (
-                        <div className="text-sm">
-                          <span className="text-gray-500">Decision Date:</span>{' '}
-                          <span className="font-medium text-gray-900">
-                            {format(new Date(cycle.decisionDate), 'MMMM d, yyyy')}
-                          </span>
-                        </div>
-                      )}
                       {cycle.maxRequestAmount && (
                         <div className="flex items-center gap-1 text-sm">
                           <DollarSign className="w-4 h-4 text-gray-400" />

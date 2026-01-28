@@ -72,6 +72,18 @@ export default async function OrganizationDetailPage({
         cycleYear: app.cycleYear,
         amountRequested: app.amountRequested ? parseFloat(app.amountRequested.toString()) : null,
       }))}
+      documents={organization.documents.map((doc: any) => ({
+        id: doc.id,
+        name: doc.name,
+        type: doc.type,
+        fileName: doc.fileName,
+        fileSize: doc.fileSize,
+        mimeType: doc.mimeType,
+        storageUrl: doc.storageUrl,
+        documentYear: doc.documentYear,
+        uploadedAt: doc.uploadedAt.toISOString(),
+        uploadedByName: doc.uploadedByName,
+      }))}
     />
   )
 }
