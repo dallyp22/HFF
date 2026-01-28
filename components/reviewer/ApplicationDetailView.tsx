@@ -265,6 +265,8 @@ export function ApplicationDetailView({
               generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
               applicationId={application.id}
               isAdmin={userIsAdmin}
+              highlights={highlights}
+              onHighlightChange={fetchHighlights}
             />
           </div>
         </FadeIn>
@@ -817,7 +819,20 @@ function ImpactTab({
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Poverty Indicators</p>
-            <p className="text-gray-600">{application.povertyIndicators || 'Not specified'}</p>
+            <div className="text-gray-600">
+              {application.povertyIndicators ? (
+                <HighlightableText
+                  text={application.povertyIndicators}
+                  fieldName="povertyIndicators"
+                  applicationId={application.id}
+                  highlights={highlights}
+                  isAdmin={isAdmin}
+                  onHighlightChange={onHighlightChange}
+                />
+              ) : (
+                <span className="text-gray-400 italic">Not specified</span>
+              )}
+            </div>
           </div>
         </div>
       </GlassCard>
@@ -848,11 +863,37 @@ function ImpactTab({
           </div>
           <div className="pt-3 border-t border-gray-100">
             <p className="text-sm font-medium text-gray-700 mb-1">Measurement Plan</p>
-            <p className="text-gray-600">{application.measurementPlan || 'Not specified'}</p>
+            <div className="text-gray-600">
+              {application.measurementPlan ? (
+                <HighlightableText
+                  text={application.measurementPlan}
+                  fieldName="measurementPlan"
+                  applicationId={application.id}
+                  highlights={highlights}
+                  isAdmin={isAdmin}
+                  onHighlightChange={onHighlightChange}
+                />
+              ) : (
+                <span className="text-gray-400 italic">Not specified</span>
+              )}
+            </div>
           </div>
           <div className="pt-3 border-t border-gray-100">
             <p className="text-sm font-medium text-gray-700 mb-1">Sustainability Plan</p>
-            <p className="text-gray-600">{application.sustainabilityPlan || 'Not specified'}</p>
+            <div className="text-gray-600">
+              {application.sustainabilityPlan ? (
+                <HighlightableText
+                  text={application.sustainabilityPlan}
+                  fieldName="sustainabilityPlan"
+                  applicationId={application.id}
+                  highlights={highlights}
+                  isAdmin={isAdmin}
+                  onHighlightChange={onHighlightChange}
+                />
+              ) : (
+                <span className="text-gray-400 italic">Not specified</span>
+              )}
+            </div>
           </div>
         </div>
       </GlassCard>

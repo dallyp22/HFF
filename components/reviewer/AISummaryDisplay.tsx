@@ -20,6 +20,7 @@ import {
   Zap,
   BarChart3,
 } from 'lucide-react'
+import { HighlightableText, type Highlight } from '@/components/reviewer/HighlightableText'
 
 interface AISummaryDisplayProps {
   summary: string | null
@@ -31,6 +32,8 @@ interface AISummaryDisplayProps {
   generatedAt: string | null
   applicationId: string
   isAdmin: boolean
+  highlights?: Highlight[]
+  onHighlightChange?: () => void
 }
 
 const SCORE_TOOLTIPS = {
@@ -439,6 +442,8 @@ export function AISummaryDisplay({
   generatedAt,
   applicationId,
   isAdmin,
+  highlights = [],
+  onHighlightChange,
 }: AISummaryDisplayProps) {
   const [regenerating, setRegenerating] = useState(false)
 
@@ -587,7 +592,16 @@ export function AISummaryDisplay({
             </div>
           </div>
         </div>
-        <p className="text-sm text-gray-700 leading-relaxed">{summary}</p>
+        <div className="text-sm text-gray-700 leading-relaxed">
+          <HighlightableText
+            text={summary}
+            fieldName="aiSummary"
+            applicationId={applicationId}
+            highlights={highlights}
+            isAdmin={isAdmin}
+            onHighlightChange={onHighlightChange || (() => {})}
+          />
+        </div>
         {generatedAt && (
           <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100">
             <Sparkles className="w-3 h-3 text-purple-400" />

@@ -165,13 +165,12 @@ export function HighlightableText({
 
     if (startOffset === endOffset || startOffset < 0 || endOffset < 0) return
 
-    // Position popover near the selection
+    // Position popover using fixed/viewport coordinates to avoid overflow clipping
     const rect = range.getBoundingClientRect()
-    const containerRect = containerRef.current.getBoundingClientRect()
 
     setPopover({
-      x: rect.left - containerRect.left + rect.width / 2,
-      y: rect.top - containerRect.top - 8,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8,
       startOffset: Math.min(startOffset, endOffset),
       endOffset: Math.max(startOffset, endOffset),
     })
@@ -293,12 +292,10 @@ export function HighlightableText({
               className={`${colorCfg.bg} rounded-sm px-0.5 -mx-0.5 cursor-pointer border-b-2 ${colorCfg.border} transition-colors hover:opacity-80`}
               onMouseEnter={(e) => {
                 const rect = (e.target as HTMLElement).getBoundingClientRect()
-                const containerRect = containerRef.current?.getBoundingClientRect()
-                if (!containerRect) return
                 setTooltip({
                   highlight: primary,
-                  x: rect.left - containerRect.left + rect.width / 2,
-                  y: rect.bottom - containerRect.top + 4,
+                  x: rect.left + rect.width / 2,
+                  y: rect.bottom + 4,
                 })
               }}
               onMouseLeave={() => {
@@ -326,11 +323,11 @@ export function HighlightableText({
         </div>
       )}
 
-      {/* Creation popover (admin only) */}
+      {/* Creation popover (admin only) - uses fixed positioning to escape overflow clipping */}
       {popover && isAdmin && (
         <div
           data-highlight-popover
-          className="absolute z-50 w-64 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-3"
+          className="fixed z-[9999] w-64 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-3"
           style={{
             left: `${popover.x}px`,
             top: `${popover.y}px`,
@@ -415,11 +412,11 @@ export function HighlightableText({
         </div>
       )}
 
-      {/* Existing highlight tooltip */}
+      {/* Existing highlight tooltip - uses fixed positioning to escape overflow clipping */}
       {tooltip && (
         <div
           data-highlight-popover
-          className="absolute z-50 w-56 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-2"
+          className="fixed z-[9999] w-56 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-2"
           style={{
             left: `${tooltip.x}px`,
             top: `${tooltip.y}px`,
