@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { Highlighter, Trash2, MessageSquare, X, User, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -132,6 +133,7 @@ export function HighlightableText({
   const [selectedColor, setSelectedColor] = useState<string>('yellow')
   const [comment, setComment] = useState('')
   const [saving, setSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   // Tooltip state for existing highlights
   const [tooltip, setTooltip] = useState<{
@@ -141,6 +143,11 @@ export function HighlightableText({
   } | null>(null)
 
   const [deleting, setDeleting] = useState<string | null>(null)
+
+  // Ensure portal only renders on client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // ---------------------------------------------------------------
   // Text selection handler (admin only)
@@ -165,7 +172,7 @@ export function HighlightableText({
 
     if (startOffset === endOffset || startOffset < 0 || endOffset < 0) return
 
-    // Position popover using fixed/viewport coordinates to avoid overflow clipping
+    // Position popover using viewport coordinates
     const rect = range.getBoundingClientRect()
 
     setPopover({
@@ -323,15 +330,17 @@ export function HighlightableText({
         </div>
       )}
 
-      {/* Creation popover (admin only) - uses fixed positioning to escape overflow clipping */}
-      {popover && isAdmin && (
+      {/* Creation popover - portaled to document.body to escape all overflow/transform/backdrop-blur containers */}
+      {mounted && popover && isAdmin && createPortal(
         <div
           data-highlight-popover
-          className="fixed z-[9999] w-64 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-3"
+          className="w-64 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 space-y-3"
           style={{
+            position: 'fixed',
             left: `${popover.x}px`,
             top: `${popover.y}px`,
             transform: 'translate(-50%, -100%)',
+            zIndex: 99999,
           }}
         >
           {/* Arrow */}
@@ -409,18 +418,21 @@ export function HighlightableText({
               {saving ? 'Saving...' : 'Highlight'}
             </Button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Existing highlight tooltip - uses fixed positioning to escape overflow clipping */}
-      {tooltip && (
+      {/* Existing highlight tooltip - portaled to document.body */}
+      {mounted && tooltip && createPortal(
         <div
           data-highlight-popover
-          className="fixed z-[9999] w-56 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-2"
+          className="w-56 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 space-y-2"
           style={{
+            position: 'fixed',
             left: `${tooltip.x}px`,
             top: `${tooltip.y}px`,
             transform: 'translateX(-50%)',
+            zIndex: 99999,
           }}
           onMouseEnter={() => {
             // Keep tooltip visible while hovering
@@ -468,7 +480,8 @@ export function HighlightableText({
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
