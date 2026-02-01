@@ -93,7 +93,7 @@ export default function DocumentsPage() {
           const org = await response.json()
           if (org && org.id) {
             // Fetch documents
-            const docsResponse = await fetch('/api/documents')
+            const docsResponse = await fetch(`/api/documents?organizationId=${org.id}`)
             if (docsResponse.ok) {
               const docs = await docsResponse.json()
               setOrganization({ ...org, documents: docs })
