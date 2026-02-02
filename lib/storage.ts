@@ -17,7 +17,7 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const blob = await put(path, file, {
     access: 'public',
-    addRandomSuffix: false,
+    addRandomSuffix: true,
   })
 
   return {
