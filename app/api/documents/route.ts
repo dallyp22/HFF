@@ -56,15 +56,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Verify blob storage is configured
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('BLOB_READ_WRITE_TOKEN is not configured')
-      return NextResponse.json(
-        { error: 'File storage is not configured. Please contact the administrator.' },
-        { status: 503 }
-      )
-    }
-
     // Upload to blob storage
     const storagePath = scope === 'ORGANIZATION'
       ? getOrganizationDocumentPath(targetOrgId!, file.name)
@@ -74,9 +65,10 @@ export async function POST(req: Request) {
     try {
       uploadResult = await uploadFile(file, storagePath)
     } catch (uploadError) {
-      console.error('Blob upload failed:', uploadError)
+      const msg = uploadError instanceof Error ? uploadError.message : String(uploadError)
+      console.error('Blob upload failed:', msg, uploadError)
       return NextResponse.json(
-        { error: 'Failed to upload file to storage. Please try again or contact the administrator.' },
+        { error: `File upload failed: ${msg}` },
         { status: 502 }
       )
     }
