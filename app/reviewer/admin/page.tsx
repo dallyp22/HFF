@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { clerkClient } from '@clerk/nextjs/server'
 import { AdminDashboardClient } from '@/components/admin/AdminDashboardClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboardPage() {
   // Get statistics
   const [cyclesCount, orgsCount, appsCount] = await Promise.all([

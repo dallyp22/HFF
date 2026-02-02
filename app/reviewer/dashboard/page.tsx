@@ -1,5 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 import { GlassCard } from '@/components/glass/GlassCard'
 import { GlassBadge } from '@/components/glass/GlassBadge'
 import { Button } from '@/components/ui/button'

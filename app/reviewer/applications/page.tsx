@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { ReviewerApplicationsClient } from '@/components/reviewer/ReviewerApplicationsClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ReviewerApplicationsPage({
   searchParams,
 }: {

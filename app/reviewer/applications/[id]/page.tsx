@@ -1,5 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import { ApplicationDetailView } from '@/components/reviewer/ApplicationDetailView'
 import { isAdmin, isManager } from '@/lib/auth/access'

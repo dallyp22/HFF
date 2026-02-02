@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { OrganizationDetailClient } from '@/components/reviewer/OrganizationDetailClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function OrganizationDetailPage({
   params,
 }: {
