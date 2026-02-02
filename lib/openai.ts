@@ -1,17 +1,42 @@
 import OpenAI from 'openai'
+import { prisma } from '@/lib/prisma'
 
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-export const SYSTEM_PROMPT = `You are an expert grant analyst for the Heistand Family Foundation, a charitable organization with the mission: "To encourage and multiply opportunities for children in poverty" in the Omaha/Council Bluffs metro area and Western Iowa (100-mile radius).
+// Default values (match the DB defaults in settings route)
+const DEFAULT_PRIORITIES = [
+  'Direct impact on children in poverty (primary mission alignment)',
+  'Geographic fit within service area',
+  'Organizational capacity and track record',
+  'Budget reasonableness and sustainability',
+  'Measurable outcomes',
+]
+
+const DEFAULT_GEOGRAPHIC_FOCUS = 'Omaha/Council Bluffs metro area and Western Iowa, 100-mile radius'
+
+export interface AIScoringConfig {
+  priorities: string[]
+  geographicFocus: string
+  customGuidance: string
+  temperature: number
+  maxTokens: number
+}
+
+export function buildSystemPrompt(config?: Partial<AIScoringConfig>): string {
+  const priorities = config?.priorities?.length ? config.priorities : DEFAULT_PRIORITIES
+  const geographicFocus = config?.geographicFocus || DEFAULT_GEOGRAPHIC_FOCUS
+  const customGuidance = config?.customGuidance || ''
+
+  const prioritiesList = priorities
+    .map((p, i) => `${i + 1}. ${p}`)
+    .join('\n')
+
+  let prompt = `You are an expert grant analyst for the Heistand Family Foundation, a charitable organization with the mission: "To encourage and multiply opportunities for children in poverty" in the ${geographicFocus}.
 
 Analyze grant applications with these priorities:
-1. Direct impact on children in poverty (primary mission alignment)
-2. Geographic fit (Omaha/Council Bluffs + 100mi Western Iowa)
-3. Organizational capacity and track record
-4. Budget reasonableness and sustainability
-5. Measurable outcomes
+${prioritiesList}
 
 Be objective, thorough, and constructive. Provide scores on a 1-100 scale where:
 - 80-100: Excellent alignment/capacity
@@ -20,6 +45,47 @@ Be objective, thorough, and constructive. Provide scores on a 1-100 scale where:
 - <40: Poor fit for foundation priorities
 
 Return analysis as valid JSON only, no additional text.`
+
+  if (customGuidance) {
+    prompt += `\n\nAdditional guidance:\n${customGuidance}`
+  }
+
+  return prompt
+}
+
+// Backward-compatible export using defaults
+export const SYSTEM_PROMPT = buildSystemPrompt()
+
+export async function getAIScoringConfig(): Promise<{
+  config: AIScoringConfig
+  temperature: number
+  maxTokens: number
+}> {
+  const settings = await prisma.foundationSettings.findUnique({
+    where: { id: 'default' },
+    select: {
+      aiScoringPriorities: true,
+      aiGeographicFocus: true,
+      aiCustomGuidance: true,
+      aiTemperature: true,
+      aiMaxTokens: true,
+    },
+  })
+
+  const config: AIScoringConfig = {
+    priorities: settings?.aiScoringPriorities?.length ? settings.aiScoringPriorities : DEFAULT_PRIORITIES,
+    geographicFocus: settings?.aiGeographicFocus || DEFAULT_GEOGRAPHIC_FOCUS,
+    customGuidance: settings?.aiCustomGuidance || '',
+    temperature: settings?.aiTemperature ?? 0.3,
+    maxTokens: settings?.aiMaxTokens ?? 2000,
+  }
+
+  return {
+    config,
+    temperature: config.temperature,
+    maxTokens: config.maxTokens,
+  }
+}
 
 export interface AISummaryResponse {
   overview: string

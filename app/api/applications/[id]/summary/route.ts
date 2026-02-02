@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { isReviewer } from '@/lib/auth/access'
-import { openai, SYSTEM_PROMPT, buildAnalysisPrompt, type AISummaryResponse } from '@/lib/openai'
+import { openai, buildSystemPrompt, buildAnalysisPrompt, getAIScoringConfig, type AISummaryResponse } from '@/lib/openai'
 
 export async function GET(
   req: Request,
@@ -97,18 +97,20 @@ export async function POST(
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }
 
-    // Build analysis prompt
+    // Build analysis prompt with dynamic config from settings
     const prompt = buildAnalysisPrompt(application)
+    const { config, temperature, maxTokens } = await getAIScoringConfig()
+    const systemPrompt = buildSystemPrompt(config)
 
     // Call OpenAI
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.3,
-      max_tokens: 2000,
+      temperature,
+      max_tokens: maxTokens,
       response_format: { type: 'json_object' },
     })
 

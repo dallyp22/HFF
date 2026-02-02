@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   ExternalLink,
   Sparkles,
+  Brain,
 } from 'lucide-react'
 import { EditSettingsDialog } from '@/components/admin/EditSettingsDialog'
 import { toast } from 'sonner'
@@ -45,6 +46,11 @@ interface FoundationSettings {
   facebookUrl?: string
   twitterUrl?: string
   linkedinUrl?: string
+  aiScoringPriorities?: string[]
+  aiGeographicFocus?: string
+  aiCustomGuidance?: string
+  aiTemperature?: number
+  aiMaxTokens?: number
   updatedAt: string
   updatedByName?: string
 }
@@ -344,9 +350,71 @@ export default function FoundationSettingsPage() {
             </FadeIn>
           )}
 
+          {/* AI Scoring Configuration */}
+          <FadeIn delay={0.35}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <Brain className="w-5 h-5 text-[var(--hff-teal)]" />
+                AI Scoring Configuration
+              </h2>
+
+              <div className="space-y-4">
+                {/* Scoring Priorities */}
+                {settings.aiScoringPriorities && settings.aiScoringPriorities.length > 0 && (
+                  <div className="p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm font-medium text-gray-500 mb-3">Scoring Priorities</p>
+                    <ol className="space-y-2">
+                      {settings.aiScoringPriorities.map((priority, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--hff-teal)]/10 text-[var(--hff-teal)] text-xs font-medium flex items-center justify-center mt-0.5">
+                            {index + 1}
+                          </span>
+                          <span className="text-gray-700 text-sm">{priority}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {/* Geographic Focus */}
+                {settings.aiGeographicFocus && (
+                  <div className="p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Geographic Focus</p>
+                    <p className="text-gray-700">{settings.aiGeographicFocus}</p>
+                  </div>
+                )}
+
+                {/* Custom Guidance */}
+                {settings.aiCustomGuidance && (
+                  <div className="p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Custom Guidance</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">{settings.aiCustomGuidance}</p>
+                  </div>
+                )}
+
+                {/* Temperature & Max Tokens */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Temperature</p>
+                    <p className="text-gray-900 font-medium">
+                      {settings.aiTemperature?.toFixed(1) ?? '0.3'}
+                      <span className="text-sm font-normal text-gray-500 ml-2">
+                        ({(settings.aiTemperature ?? 0.3) <= 0.3 ? 'Consistent' : (settings.aiTemperature ?? 0.3) >= 0.7 ? 'Creative' : 'Balanced'})
+                      </span>
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Max Tokens</p>
+                    <p className="text-gray-900 font-medium">{settings.aiMaxTokens ?? 2000}</p>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          </FadeIn>
+
           {/* Last Updated */}
           {settings.updatedByName && (
-            <FadeIn delay={0.35}>
+            <FadeIn delay={0.4}>
               <div className="text-sm text-gray-500 text-center py-4">
                 Last updated by <span className="font-medium">{settings.updatedByName}</span> on{' '}
                 {new Date(settings.updatedAt).toLocaleString()}

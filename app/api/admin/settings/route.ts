@@ -34,6 +34,17 @@ export async function GET() {
           state: 'NE',
           zipCode: '68102',
           focusAreas: ['Children in Poverty', 'Education', 'Community Development'],
+          aiScoringPriorities: [
+            'Direct impact on children in poverty (primary mission alignment)',
+            'Geographic fit within service area',
+            'Organizational capacity and track record',
+            'Budget reasonableness and sustainability',
+            'Measurable outcomes',
+          ],
+          aiGeographicFocus: 'Omaha/Council Bluffs metro area and Western Iowa, 100-mile radius',
+          aiCustomGuidance: '',
+          aiTemperature: 0.3,
+          aiMaxTokens: 2000,
         },
       })
     }

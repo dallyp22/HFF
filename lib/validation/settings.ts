@@ -17,6 +17,11 @@ export const foundationSettingsSchema = z.object({
   facebookUrl: z.string().url().optional().or(z.literal('')),
   twitterUrl: z.string().url().optional().or(z.literal('')),
   linkedinUrl: z.string().url().optional().or(z.literal('')),
+  aiScoringPriorities: z.array(z.string().min(1)).max(10).default([]),
+  aiGeographicFocus: z.string().max(500).optional().or(z.literal('')),
+  aiCustomGuidance: z.string().max(2000).optional().or(z.literal('')),
+  aiTemperature: z.number().min(0).max(1).default(0.3),
+  aiMaxTokens: z.number().int().min(500).max(4000).default(2000),
 })
 
 export type FoundationSettingsFormData = z.infer<typeof foundationSettingsSchema>

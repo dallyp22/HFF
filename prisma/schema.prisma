@@ -622,7 +622,14 @@ model FoundationSettings {
   facebookUrl           String?
   twitterUrl            String?
   linkedinUrl           String?
-  
+
+  // AI Scoring Configuration
+  aiScoringPriorities   String[]  @default([])
+  aiGeographicFocus     String?   @db.Text
+  aiCustomGuidance      String?   @db.Text
+  aiTemperature         Float     @default(0.3)
+  aiMaxTokens           Int       @default(2000)
+
   // Settings Metadata
   updatedAt             DateTime @updatedAt
   updatedById           String?  // Clerk user ID
