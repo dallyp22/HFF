@@ -56,12 +56,30 @@ export async function POST(req: Request) {
       )
     }
 
+    // Verify blob storage is configured
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('BLOB_READ_WRITE_TOKEN is not configured')
+      return NextResponse.json(
+        { error: 'File storage is not configured. Please contact the administrator.' },
+        { status: 503 }
+      )
+    }
+
     // Upload to blob storage
     const storagePath = scope === 'ORGANIZATION'
       ? getOrganizationDocumentPath(targetOrgId!, file.name)
       : `applications/${applicationId}/${file.name}`
 
-    const uploadResult = await uploadFile(file, storagePath)
+    let uploadResult
+    try {
+      uploadResult = await uploadFile(file, storagePath)
+    } catch (uploadError) {
+      console.error('Blob upload failed:', uploadError)
+      return NextResponse.json(
+        { error: 'Failed to upload file to storage. Please try again or contact the administrator.' },
+        { status: 502 }
+      )
+    }
 
     // Create document record in database
     const document = await prisma.document.create({
@@ -86,8 +104,9 @@ export async function POST(req: Request) {
     return NextResponse.json(document)
   } catch (error) {
     console.error('Error uploading document:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to upload document' },
+      { error: `Failed to upload document: ${message}` },
       { status: 500 }
     )
   }
