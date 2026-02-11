@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { sendLOIApproved, sendLOIDeclined } from '@/lib/email'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 // POST - Admin reviews LOI (approve or decline)
 export async function POST(
@@ -17,8 +18,8 @@ export async function POST(
     }
 
     // Check if user is a reviewer/admin
-    const isReviewer = (user as any).organizationMemberships?.length > 0
-    if (!isReviewer) {
+    const reviewerAccess = await checkIsReviewer()
+    if (!reviewerAccess) {
       return NextResponse.json({ error: 'Only reviewers can review LOIs' }, { status: 403 })
     }
 
@@ -194,8 +195,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const isReviewer = (user as any).organizationMemberships?.length > 0
-    if (!isReviewer) {
+    const reviewerAccess = await checkIsReviewer()
+    if (!reviewerAccess) {
       return NextResponse.json({ error: 'Only reviewers can review LOIs' }, { status: 403 })
     }
 

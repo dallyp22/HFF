@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { uploadFile, getOrganizationDocumentPath, validateFileType, validateFileSize } from '@/lib/storage'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 export async function POST(req: Request) {
   try {
@@ -122,13 +123,13 @@ export async function GET(req: Request) {
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
     let documents
 
     if (organizationId) {
       // Check access
-      if (!isReviewer && dbUser?.organizationId !== organizationId) {
+      if (!reviewerAccess && dbUser?.organizationId !== organizationId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
 

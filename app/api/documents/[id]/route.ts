@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { deleteFile } from '@/lib/storage'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 export async function GET(
   req: Request,
@@ -29,9 +30,9 @@ export async function GET(
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
-    if (!isReviewer && document.organizationId !== dbUser?.organizationId) {
+    if (!reviewerAccess && document.organizationId !== dbUser?.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -71,9 +72,9 @@ export async function DELETE(
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
-    if (!isReviewer && document.organizationId !== dbUser?.organizationId) {
+    if (!reviewerAccess && document.organizationId !== dbUser?.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

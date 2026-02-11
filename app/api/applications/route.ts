@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 export async function POST(req: Request) {
   try {
@@ -96,11 +97,11 @@ export async function GET(req: Request) {
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
     let where: any = {}
 
-    if (!isReviewer) {
+    if (!reviewerAccess) {
       // Applicants only see their own organization's applications
       if (!dbUser?.organizationId) {
         return NextResponse.json([])

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { organizationProfileSchema, isProfileComplete } from '@/lib/validation/profile'
+import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 export async function GET(
   req: Request,
@@ -29,9 +30,9 @@ export async function GET(
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
-    if (!isReviewer && dbUser?.organizationId !== id) {
+    if (!reviewerAccess && dbUser?.organizationId !== id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -63,9 +64,9 @@ export async function PATCH(
       select: { organizationId: true },
     })
 
-    const isReviewer = (user as any).organizationMemberships && (user as any).organizationMemberships.length > 0
+    const reviewerAccess = await checkIsReviewer()
 
-    if (!isReviewer && dbUser?.organizationId !== id) {
+    if (!reviewerAccess && dbUser?.organizationId !== id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -6,11 +6,11 @@ import { currentUser, clerkClient } from '@clerk/nextjs/server'
  */
 export async function canAccessApplication(applicationId: string): Promise<boolean> {
   const clerkUser = await currentUser()
-  
+
   if (!clerkUser) return false
 
   // Reviewers (org members) can access all applications
-  if ((clerkUser as any).organizationMemberships && (clerkUser as any).organizationMemberships.length > 0) {
+  if (await isReviewer()) {
     return true
   }
 
@@ -37,11 +37,11 @@ export async function canAccessApplication(applicationId: string): Promise<boole
  */
 export async function canAccessOrganization(organizationId: string): Promise<boolean> {
   const clerkUser = await currentUser()
-  
+
   if (!clerkUser) return false
 
   // Reviewers can access all organizations
-  if ((clerkUser as any).organizationMemberships && (clerkUser as any).organizationMemberships.length > 0) {
+  if (await isReviewer()) {
     return true
   }
 
@@ -73,8 +73,7 @@ export async function canModifyApplication(applicationId: string): Promise<boole
   if (!application) return false
 
   // Managers and admins can modify any application
-  const orgRole = (clerkUser as any).organizationMemberships?.[0]?.role
-  if (orgRole === 'org:manager' || orgRole === 'org:admin') {
+  if (await isManager()) {
     return true
   }
 
