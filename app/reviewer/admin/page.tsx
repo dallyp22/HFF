@@ -13,7 +13,7 @@ export default async function AdminDashboardPage() {
   ])
 
   // Get reviewer count via Clerk
-  const HFF_ORG_ID = process.env.CLERK_ORGANIZATION_ID || 'org_382FE_JSV0UZW59'
+  const HFF_ORG_ID = process.env.CLERK_ORGANIZATION_ID || 'org_382FEYv93CvGCm044yJSVOUZW59'
   let reviewerCount = 0
   try {
     const client = await clerkClient()
