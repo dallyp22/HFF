@@ -18,6 +18,7 @@ import {
   Send,
   Calendar,
   Edit,
+  Printer,
 } from 'lucide-react'
 
 interface ApplicationStatusClientProps {
@@ -119,29 +120,47 @@ export function ApplicationStatusClient({
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
+        {/* Print-only Header */}
+        <div className="print-only print-header">
+          <h1>Heistand Family Foundation</h1>
+          <h2>Grant Application</h2>
+          <p>{application.projectTitle || 'Application'} — {application.grantCycle} {application.cycleYear}</p>
+        </div>
+
         {/* Header */}
         <FadeIn>
           <Link
             href="/applications"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
+            className="no-print inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Applications
           </Link>
 
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl bg-[var(--hff-teal)]/10">
-                <FileText className="w-6 h-6 text-[var(--hff-teal)]" />
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[var(--hff-teal)]/10">
+                  <FileText className="w-6 h-6 text-[var(--hff-teal)]" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {application.projectTitle || 'Application'}
+                  </h1>
+                  <p className="text-gray-600">
+                    {application.grantCycle} {application.cycleYear} Grant Cycle
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {application.projectTitle || 'Application'}
-                </h1>
-                <p className="text-gray-600">
-                  {application.grantCycle} {application.cycleYear} Grant Cycle
-                </p>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="no-print rounded-lg"
+                onClick={() => window.print()}
+              >
+                <Printer className="w-4 h-4" />
+                Download PDF
+              </Button>
             </div>
           </div>
         </FadeIn>
@@ -299,7 +318,7 @@ export function ApplicationStatusClient({
 
         {/* Action Buttons */}
         <FadeIn delay={0.25}>
-          <div className="mt-6 flex gap-3">
+          <div className="no-print mt-6 flex gap-3">
             <Button variant="outline" asChild>
               <Link href="/applications">Back to Applications</Link>
             </Button>

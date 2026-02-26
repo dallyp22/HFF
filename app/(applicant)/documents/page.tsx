@@ -46,12 +46,12 @@ interface Organization {
   documents: Document[]
 }
 
-const requiredDocTypes = ['FORM_990', 'IRS_DETERMINATION', 'FINANCIAL_STATEMENT', 'ANNUAL_ORG_BUDGET', 'END_OF_YEAR_FINANCIAL']
+const requiredDocTypes = ['FORM_990', 'IRS_DETERMINATION', 'FINANCIAL_STATEMENT', 'ANNUAL_ORG_BUDGET']
 
 const docTypeConfig: Record<string, { label: string; description: string; icon: typeof FileText }> = {
   FORM_990: {
-    label: 'Form 990',
-    description: 'IRS Form 990 (most recent)',
+    label: 'Most Recent 990',
+    description: 'IRS Form 990 (most recent filing)',
     icon: FileSpreadsheet,
   },
   IRS_DETERMINATION: {
@@ -60,19 +60,14 @@ const docTypeConfig: Record<string, { label: string; description: string; icon: 
     icon: Shield,
   },
   FINANCIAL_STATEMENT: {
-    label: 'Financial Statement',
-    description: 'Audited or compiled financials',
+    label: 'Most Recent Fiscal Year End Report',
+    description: 'End of fiscal year financial report',
     icon: FileCheck,
   },
   ANNUAL_ORG_BUDGET: {
-    label: 'Annual Organization Budget',
-    description: 'Most recent fiscal year',
+    label: 'Current FY Organization Budget',
+    description: 'Current fiscal year operating budget',
     icon: FileSpreadsheet,
-  },
-  END_OF_YEAR_FINANCIAL: {
-    label: 'End of Year Financial Report',
-    description: 'Most recent fiscal year',
-    icon: FileCheck,
   },
   OTHER: {
     label: 'Other',

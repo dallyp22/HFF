@@ -31,18 +31,16 @@ import { formatFileSize, validateFileType, validateFileSize } from '@/lib/storag
 import Link from 'next/link'
 
 const DOCUMENT_TYPES = [
-  { value: 'FORM_990', label: 'Form 990' },
+  { value: 'FORM_990', label: 'Most Recent 990' },
   { value: 'FORM_990_EZ', label: 'Form 990-EZ' },
   { value: 'FORM_990_N', label: 'Form 990-N' },
   { value: 'IRS_DETERMINATION', label: 'IRS Determination Letter' },
-  { value: 'FINANCIAL_STATEMENT', label: 'Financial Statement' },
-  { value: 'ANNUAL_ORG_BUDGET', label: 'Annual Organization Budget (Most Recent Fiscal Year)' },
-  { value: 'END_OF_YEAR_FINANCIAL', label: 'End of Year Financial Report (Most Recent Fiscal Year)' },
+  { value: 'FINANCIAL_STATEMENT', label: 'Most Recent Fiscal Year End Report' },
+  { value: 'ANNUAL_ORG_BUDGET', label: 'Current FY Organization Budget' },
   { value: 'AUDIT_REPORT', label: 'Audit Report' },
   { value: 'BOARD_LIST', label: 'Board of Directors List' },
   { value: 'ANNUAL_REPORT', label: 'Annual Report' },
   { value: 'PROJECT_NARRATIVE', label: 'Project Narrative' },
-  { value: 'PROJECT_BUDGET', label: 'Project Budget' },
   { value: 'OTHER', label: 'Other' },
 ]
 

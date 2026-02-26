@@ -39,8 +39,8 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
   DRAFT: { label: 'Draft', variant: 'default', icon: FileText },
   SUBMITTED: { label: 'Submitted', variant: 'warning', icon: Send },
   UNDER_REVIEW: { label: 'Under Review', variant: 'warning', icon: Eye },
-  APPROVED: { label: 'Approved', variant: 'success', icon: CheckCircle2 },
-  DECLINED: { label: 'Declined', variant: 'error', icon: XCircle },
+  APPROVED: { label: 'Award Consideration', variant: 'success', icon: CheckCircle2 },
+  DECLINED: { label: 'No Funding Consideration', variant: 'error', icon: XCircle },
 }
 
 const focusAreaLabels: Record<string, string> = {
@@ -116,8 +116,8 @@ export default function ReviewerLOIDetailPage() {
         const result = await response.json()
         toast.success(
           decision === 'APPROVED'
-            ? 'LOI approved! Full application created.'
-            : 'LOI declined.'
+            ? 'Award consideration confirmed. Full application created.'
+            : 'No funding consideration recorded.'
         )
         router.push('/reviewer/lois')
       } else {
@@ -225,7 +225,7 @@ export default function ReviewerLOIDetailPage() {
                     className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
                   >
                     <ThumbsDown className="w-4 h-4 mr-2" />
-                    Decline
+                    No Funding Consideration
                   </Button>
                   <Button
                     onClick={() => {
@@ -235,7 +235,7 @@ export default function ReviewerLOIDetailPage() {
                     className="rounded-xl bg-green-600 hover:bg-green-700"
                   >
                     <ThumbsUp className="w-4 h-4 mr-2" />
-                    Approve
+                    Confirm Award Consideration
                   </Button>
                 </div>
               )}
@@ -271,12 +271,12 @@ export default function ReviewerLOIDetailPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {decision === 'APPROVED' ? 'Approve LOI' : 'Decline LOI'}
+                      {decision === 'APPROVED' ? 'Confirm Award Consideration' : 'No Funding Consideration'}
                     </h3>
                     <p className="text-sm text-gray-600">
                       {decision === 'APPROVED'
-                        ? 'This will create a full application for the organization to complete.'
-                        : 'The applicant will be notified of this decision.'}
+                        ? 'This will confirm award consideration and create a full application for the organization to complete.'
+                        : 'This will record no funding consideration. The applicant will be notified of this decision.'}
                     </p>
                   </div>
                 </div>
@@ -348,12 +348,12 @@ export default function ReviewerLOIDetailPage() {
                           {decision === 'APPROVED' ? (
                             <>
                               <CheckCircle2 className="w-4 h-4 mr-2" />
-                              Confirm Approval
+                              Confirm Award Consideration
                             </>
                           ) : (
                             <>
                               <XCircle className="w-4 h-4 mr-2" />
-                              Confirm Decline
+                              Confirm No Funding
                             </>
                           )}
                         </>
@@ -375,7 +375,7 @@ export default function ReviewerLOIDetailPage() {
                   <CheckCircle2 className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">LOI Approved</p>
+                  <p className="font-semibold text-gray-900">Award Consideration</p>
                   <p className="text-sm text-gray-600">
                     Approved on {loi.reviewedAt ? formatDate(loi.reviewedAt) : 'N/A'}
                     {loi.reviewedByName && ` by ${loi.reviewedByName}`}
@@ -402,7 +402,7 @@ export default function ReviewerLOIDetailPage() {
                   <XCircle className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">LOI Declined</p>
+                  <p className="font-semibold text-gray-900">No Funding Consideration</p>
                   <p className="text-sm text-gray-600 mb-2">
                     Declined on {loi.reviewedAt ? formatDate(loi.reviewedAt) : 'N/A'}
                     {loi.reviewedByName && ` by ${loi.reviewedByName}`}

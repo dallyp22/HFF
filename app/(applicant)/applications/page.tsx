@@ -40,6 +40,7 @@ interface Application {
   updatedAt: string
   submittedAt: string | null
   lastSavedAt: string | null
+  loiId: string | null
 }
 
 interface Organization {
@@ -370,9 +371,17 @@ export default function ApplicationsPage() {
                             <Icon className={cn('w-6 h-6', config.color.split(' ')[1])} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {app.projectTitle || 'Untitled Application'}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {app.projectTitle || 'Untitled Application'}
+                              </h3>
+                              {app.loiId && app.status === 'DRAFT' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200 whitespace-nowrap">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  From Approved LOI
+                                </span>
+                              )}
+                            </div>
                             <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5" />
@@ -486,6 +495,12 @@ export default function ApplicationsPage() {
                           <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[var(--hff-teal)] transition-colors line-clamp-2">
                             {app.projectTitle || 'Untitled Application'}
                           </h3>
+                          {app.loiId && app.status === 'DRAFT' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 mb-2 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                              <CheckCircle2 className="w-3 h-3" />
+                              From Approved LOI
+                            </span>
+                          )}
 
                           {/* Meta */}
                           <div className="space-y-2 text-sm text-gray-500">

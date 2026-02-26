@@ -12,6 +12,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Loader2,
@@ -38,8 +50,9 @@ interface FormData {
   primaryContactPhone: string
   primaryContactEmail: string
   executiveDirector: string
-  // Expenditure Type
+  // Expenditure Type & Focus Area
   expenditureType: string
+  focusArea: string
   // Project Questions
   isNewProject: string
   newProjectExplanation: string
@@ -68,7 +81,7 @@ const steps = [
     title: 'Expenditure Type',
     description: 'Type of funding request',
     icon: Target,
-    fields: ['expenditureType'],
+    fields: ['expenditureType', 'focusArea'],
   },
   {
     id: 3,
@@ -106,6 +119,12 @@ const expenditureOptions = [
   { value: 'CAPITAL', label: 'Capital Project', note: 'Requires pre-approval' },
 ]
 
+const focusAreaOptions = [
+  { value: 'HUMAN_HEALTH', label: 'Human Health & Wellbeing' },
+  { value: 'EDUCATION', label: 'Education & Development' },
+  { value: 'COMMUNITY_WELLBEING', label: 'Community Wellbeing' },
+]
+
 export default function EditLOIPage() {
   const router = useRouter()
   const params = useParams()
@@ -118,6 +137,7 @@ export default function EditLOIPage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [currentStep, setCurrentStep] = useState(1)
   const [direction, setDirection] = useState(0)
+  const [confirmSubmit, setConfirmSubmit] = useState(false)
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -127,6 +147,7 @@ export default function EditLOIPage() {
       primaryContactEmail: '',
       executiveDirector: '',
       expenditureType: '',
+      focusArea: '',
       isNewProject: '',
       newProjectExplanation: '',
       isCapacityIncrease: '',
@@ -156,7 +177,7 @@ export default function EditLOIPage() {
 
       const requiredFields: Record<number, string[]> = {
         1: ['primaryContactName', 'primaryContactEmail'],
-        2: ['expenditureType'],
+        2: ['expenditureType', 'focusArea'],
         3: [], // Optional questions
         4: ['projectTitle', 'projectDescription'],
         5: ['totalProjectAmount', 'grantRequestAmount', 'budgetOutline'],
@@ -213,6 +234,7 @@ export default function EditLOIPage() {
           primaryContactEmail: data.primaryContactEmail || '',
           executiveDirector: data.executiveDirector || '',
           expenditureType: data.expenditureType || '',
+          focusArea: data.focusArea || '',
           isNewProject: data.isNewProject === true ? 'yes' : data.isNewProject === false ? 'no' : '',
           newProjectExplanation: data.newProjectExplanation || '',
           isCapacityIncrease: data.isCapacityIncrease === true ? 'yes' : data.isCapacityIncrease === false ? 'no' : '',
@@ -295,8 +317,8 @@ export default function EditLOIPage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(e?: React.MouseEvent | React.FormEvent) {
+    e?.preventDefault()
     setSubmitting(true)
 
     try {
@@ -471,7 +493,7 @@ export default function EditLOIPage() {
         </FadeIn>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -610,6 +632,47 @@ export default function EditLOIPage() {
                               {option.note && (
                                 <p className="text-xs text-amber-600 mt-0.5">{option.note}</p>
                               )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label className="text-sm font-medium text-gray-700">
+                        Focus Area <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="grid gap-3">
+                        {focusAreaOptions.map((option) => (
+                          <label
+                            key={option.value}
+                            className={cn(
+                              'flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all',
+                              watchedValues.focusArea === option.value
+                                ? 'border-[var(--hff-teal)] bg-[var(--hff-teal)]/5'
+                                : 'border-gray-200 hover:border-gray-300'
+                            )}
+                          >
+                            <input
+                              type="radio"
+                              {...register('focusArea')}
+                              value={option.value}
+                              className="sr-only"
+                            />
+                            <div
+                              className={cn(
+                                'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                                watchedValues.focusArea === option.value
+                                  ? 'border-[var(--hff-teal)]'
+                                  : 'border-gray-300'
+                              )}
+                            >
+                              {watchedValues.focusArea === option.value && (
+                                <div className="w-3 h-3 rounded-full bg-[var(--hff-teal)]" />
+                              )}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900">{option.label}</span>
                             </div>
                           </label>
                         ))}
@@ -866,17 +929,47 @@ export default function EditLOIPage() {
                     <div className="p-4 rounded-xl bg-[var(--hff-teal)]/5 border border-[var(--hff-teal)]/10">
                       <h3 className="font-medium text-gray-900 mb-2">Ready to Submit?</h3>
                       <p className="text-sm text-gray-600">
-                        Please review your Letter of Interest before submitting. Once submitted,
+                        Please review your Letter of Interest carefully before submitting. Once submitted,
                         you will not be able to make changes.
                       </p>
                     </div>
 
-                    {/* Summary */}
+                    {/* Comprehensive Review Summary */}
                     <div className="space-y-4">
+                      {/* Contact Information */}
+                      <div className="p-4 rounded-xl bg-gray-50 space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h4>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-500">Primary Contact Name</p>
+                            <p className="text-sm font-medium">{watchedValues.primaryContactName || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Title</p>
+                            <p className="text-sm font-medium">{watchedValues.primaryContactTitle || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Email</p>
+                            <p className="text-sm font-medium">{watchedValues.primaryContactEmail || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Phone</p>
+                            <p className="text-sm font-medium">{watchedValues.primaryContactPhone || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Executive Director</p>
+                            <p className="text-sm font-medium">{watchedValues.executiveDirector || '—'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Focus Area & Expenditure Type */}
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="p-4 rounded-xl bg-gray-50">
-                          <p className="text-xs text-gray-500 mb-1">Project Title</p>
-                          <p className="font-medium">{watchedValues.projectTitle || '—'}</p>
+                          <p className="text-xs text-gray-500 mb-1">Focus Area</p>
+                          <p className="font-medium">
+                            {focusAreaOptions.find(o => o.value === watchedValues.focusArea)?.label || '—'}
+                          </p>
                         </div>
                         <div className="p-4 rounded-xl bg-gray-50">
                           <p className="text-xs text-gray-500 mb-1">Expenditure Type</p>
@@ -884,39 +977,92 @@ export default function EditLOIPage() {
                             {expenditureOptions.find(o => o.value === watchedValues.expenditureType)?.label || '—'}
                           </p>
                         </div>
-                        <div className="p-4 rounded-xl bg-gray-50">
-                          <p className="text-xs text-gray-500 mb-1">Grant Request</p>
-                          <p className="font-medium">
-                            {watchedValues.grantRequestAmount
-                              ? `$${parseInt(watchedValues.grantRequestAmount).toLocaleString()}`
-                              : '—'}
-                          </p>
-                        </div>
-                        <div className="p-4 rounded-xl bg-gray-50">
-                          <p className="text-xs text-gray-500 mb-1">Total Project Budget</p>
-                          <p className="font-medium">
-                            {watchedValues.totalProjectAmount
-                              ? `$${parseInt(watchedValues.totalProjectAmount).toLocaleString()}`
-                              : '—'}
-                          </p>
-                        </div>
                       </div>
 
-                      <div className="p-4 rounded-xl bg-gray-50">
-                        <p className="text-xs text-gray-500 mb-1">Project Description</p>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                          {watchedValues.projectDescription || '—'}
-                        </p>
+                      {/* Project Context */}
+                      <div className="p-4 rounded-xl bg-gray-50 space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Project Context</h4>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-500">New Project or Emerging Need?</p>
+                            <p className="text-sm font-medium capitalize">{watchedValues.isNewProject || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Increasing Capacity / Rising Costs?</p>
+                            <p className="text-sm font-medium capitalize">{watchedValues.isCapacityIncrease || '—'}</p>
+                          </div>
+                        </div>
+                        {watchedValues.isNewProject === 'yes' && watchedValues.newProjectExplanation && (
+                          <div>
+                            <p className="text-xs text-gray-500">New Project Explanation</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{watchedValues.newProjectExplanation}</p>
+                          </div>
+                        )}
+                        {watchedValues.isCapacityIncrease === 'yes' && watchedValues.capacityExplanation && (
+                          <div>
+                            <p className="text-xs text-gray-500">Capacity Explanation</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{watchedValues.capacityExplanation}</p>
+                          </div>
+                        )}
                       </div>
 
-                      {watchedValues.projectGoals && (
-                        <div className="p-4 rounded-xl bg-gray-50">
-                          <p className="text-xs text-gray-500 mb-1">Project Goals</p>
+                      {/* Project Overview */}
+                      <div className="p-4 rounded-xl bg-gray-50 space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Project Overview</h4>
+                        <div>
+                          <p className="text-xs text-gray-500">Project Title</p>
+                          <p className="text-sm font-medium">{watchedValues.projectTitle || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Project Description</p>
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                            {watchedValues.projectGoals}
+                            {watchedValues.projectDescription || '—'}
                           </p>
                         </div>
-                      )}
+                        {watchedValues.projectGoals && (
+                          <div>
+                            <p className="text-xs text-gray-500">Project Goals</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                              {watchedValues.projectGoals}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Financial Information */}
+                      <div className="p-4 rounded-xl bg-gray-50 space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Financial Information</h4>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-500">Total Project Budget</p>
+                            <p className="text-sm font-medium">
+                              {watchedValues.totalProjectAmount
+                                ? `$${parseInt(watchedValues.totalProjectAmount).toLocaleString()}`
+                                : '—'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Grant Request Amount</p>
+                            <p className="text-sm font-medium">
+                              {watchedValues.grantRequestAmount
+                                ? `$${parseInt(watchedValues.grantRequestAmount).toLocaleString()}`
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
+                        {percentOfProject && (
+                          <div>
+                            <p className="text-xs text-gray-500">Percent of Total Project</p>
+                            <p className="text-sm font-medium text-[var(--hff-teal)]">{percentOfProject}%</p>
+                          </div>
+                        )}
+                        {watchedValues.budgetOutline && (
+                          <div>
+                            <p className="text-xs text-gray-500">Budget Outline</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{watchedValues.budgetOutline}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Deadline reminder */}
@@ -934,6 +1080,22 @@ export default function EditLOIPage() {
                         </p>
                       </div>
                     )}
+
+                    {/* Confirmation Checkbox */}
+                    <div className="flex items-start gap-3 p-4 rounded-xl border border-gray-200">
+                      <Checkbox
+                        id="confirmSubmit"
+                        checked={confirmSubmit}
+                        onCheckedChange={(checked) => setConfirmSubmit(checked === true)}
+                        className="mt-0.5"
+                      />
+                      <Label
+                        htmlFor="confirmSubmit"
+                        className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                      >
+                        I confirm all information is accurate and complete
+                      </Label>
+                    </div>
                   </div>
                 )}
               </GlassCard>
@@ -990,23 +1152,44 @@ export default function EditLOIPage() {
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <Button
-                  type="submit"
-                  disabled={submitting || overallProgress < 60 || descriptionWordCount > 500 || goalsWordCount > 500 || budgetWordCount > 250}
-                  className="rounded-xl bg-gradient-to-r from-[var(--hff-teal)] to-[var(--hff-sage)] hover:opacity-90 shadow-lg shadow-[var(--hff-teal)]/20"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Submit LOI
-                    </>
-                  )}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      disabled={submitting || !confirmSubmit || overallProgress < 60 || descriptionWordCount > 500 || goalsWordCount > 500 || budgetWordCount > 250}
+                      className="rounded-xl bg-gradient-to-r from-[var(--hff-teal)] to-[var(--hff-sage)] hover:opacity-90 shadow-lg shadow-[var(--hff-teal)]/20"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Submit LOI
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Submit Letter of Interest</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to submit this Letter of Interest? Once submitted, you will not be able to make any further changes.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleSubmit}
+                        className="bg-[var(--hff-teal)] hover:bg-[var(--hff-teal-800)]"
+                      >
+                        Yes, Submit
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           </div>

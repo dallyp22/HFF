@@ -463,7 +463,21 @@ export default function EligibilityPage() {
                       asChild
                       className="border-2 border-white/30 text-white hover:bg-white/10 text-lg px-8 py-6 rounded-full"
                     >
-                      <Link href="/about">Learn About Us</Link>
+                      <Link href="/documents/sample-loi.pdf" target="_blank">
+                        Preview LOI Questions (PDF)
+                      </Link>
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      asChild
+                      className="border-2 border-white/30 text-white hover:bg-white/10 text-lg px-8 py-6 rounded-full"
+                    >
+                      <Link href="/documents/sample-application.pdf" target="_blank">
+                        Preview Application Questions (PDF)
+                      </Link>
                     </Button>
                   </motion.div>
                 </div>

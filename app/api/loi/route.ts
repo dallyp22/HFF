@@ -148,6 +148,19 @@ export async function POST(req: Request) {
       )
     }
 
+    // Check if profile has been reviewed for this cycle
+    const orgProfile = await prisma.organization.findUnique({
+      where: { id: dbUser.organization.id },
+      select: { profileLastReviewedForCycle: true },
+    })
+
+    if (orgProfile?.profileLastReviewedForCycle !== cycleConfig.id) {
+      return NextResponse.json(
+        { error: 'PROFILE_REVIEW_REQUIRED', cycleId: cycleConfig.id },
+        { status: 400 }
+      )
+    }
+
     // Check if LOI deadline has passed
     if (new Date() > new Date(cycleConfig.loiDeadline)) {
       return NextResponse.json(

@@ -80,7 +80,10 @@ export default function NewLOIPage() {
         router.push(`/loi/${loi.id}/edit`)
       } else {
         const error = await response.json()
-        if (error.existingId) {
+        if (error.error === 'PROFILE_REVIEW_REQUIRED' && error.cycleId) {
+          toast.info('Please review your organization profile before starting an LOI')
+          router.push(`/profile/review?cycleId=${error.cycleId}&returnTo=/loi/new`)
+        } else if (error.existingId) {
           toast.info('You already have an LOI for this cycle')
           router.push(`/loi/${error.existingId}/edit`)
         } else {

@@ -177,8 +177,20 @@ export default function HomePage() {
                         asChild
                         className="text-lg px-8 py-6 rounded-full border-2 hover:bg-[var(--hff-teal)]/5"
                       >
-                        <Link href="/sample-loi.pdf" target="_blank">
-                          View Sample LOI (PDF)
+                        <Link href="/documents/sample-loi.pdf" target="_blank">
+                          Preview LOI Questions (PDF)
+                        </Link>
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        asChild
+                        className="text-lg px-8 py-6 rounded-full border-2 hover:bg-[var(--hff-teal)]/5"
+                      >
+                        <Link href="/documents/sample-application.pdf" target="_blank">
+                          Preview Application Questions (PDF)
                         </Link>
                       </Button>
                     </motion.div>

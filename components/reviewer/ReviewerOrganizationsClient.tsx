@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/motion/FadeIn'
 import { StaggerContainer } from '@/components/motion/StaggerContainer'
 import { AnimatedCounter } from '@/components/motion/AnimatedCounter'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -24,8 +33,11 @@ import {
   TrendingUp,
   Sparkles,
   ChevronRight,
+  Trash2,
+  Loader2,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
+import { toast } from 'sonner'
 
 interface Organization {
   id: string
@@ -41,17 +53,23 @@ interface Organization {
 interface ReviewerOrganizationsClientProps {
   organizations: Organization[]
   initialSearch?: string
+  isAdmin?: boolean
 }
 
 export function ReviewerOrganizationsClient({
-  organizations,
+  organizations: initialOrganizations,
   initialSearch = '',
+  isAdmin = false,
 }: ReviewerOrganizationsClientProps) {
+  const [organizations, setOrganizations] = useState(initialOrganizations)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [sortBy, setSortBy] = useState<'name' | 'recent' | 'applications' | 'budget'>('name')
   const [showFilters, setShowFilters] = useState(false)
   const [filterComplete, setFilterComplete] = useState<'all' | 'complete' | 'incomplete'>('all')
+  const [deleteTarget, setDeleteTarget] = useState<Organization | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filteredOrganizations = useMemo(() => {
     let filtered = organizations.filter((org) => {
@@ -116,6 +134,29 @@ export function ReviewerOrganizationsClient({
   }
 
   const hasActiveFilters = searchQuery || filterComplete !== 'all' || sortBy !== 'name'
+
+  const handleDeleteOrganization = async () => {
+    if (!deleteTarget || deleteConfirmText !== 'DELETE') return
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/organizations/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete organization')
+      }
+      setOrganizations((prev) => prev.filter((o) => o.id !== deleteTarget.id))
+      toast.success(`${deleteTarget.legalName} has been deleted`)
+      setDeleteTarget(null)
+      setDeleteConfirmText('')
+    } catch (error: any) {
+      console.error('Error deleting organization:', error)
+      toast.error(error.message || 'Failed to delete organization')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -338,7 +379,7 @@ export function ReviewerOrganizationsClient({
                 <div className="space-y-3">
                   {filteredOrganizations.map((org, index) => (
                     <FadeIn key={org.id} delay={0.05 * Math.min(index, 10)}>
-                      <OrganizationListItem organization={org} />
+                      <OrganizationListItem organization={org} isAdmin={isAdmin} onDelete={setDeleteTarget} />
                     </FadeIn>
                   ))}
                 </div>
@@ -355,7 +396,7 @@ export function ReviewerOrganizationsClient({
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredOrganizations.map((org, index) => (
                     <FadeIn key={org.id} delay={0.05 * Math.min(index, 10)}>
-                      <OrganizationGridItem organization={org} />
+                      <OrganizationGridItem organization={org} isAdmin={isAdmin} onDelete={setDeleteTarget} />
                     </FadeIn>
                   ))}
                 </div>
@@ -385,6 +426,54 @@ export function ReviewerOrganizationsClient({
             </GlassCard>
           </FadeIn>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirmText('') } }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600">Delete Organization</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>
+                    You are about to permanently delete <strong>{deleteTarget?.legalName}</strong> and all associated data including LOIs, applications, documents, and users.
+                  </p>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <h4 className="font-semibold text-red-900 mb-2">This action cannot be undone. It will delete:</h4>
+                    <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+                      <li>All Letters of Interest</li>
+                      <li>All applications and review data</li>
+                      <li>All uploaded documents</li>
+                      <li>All associated user accounts</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Type <strong>DELETE</strong> to confirm
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteOrganization}
+                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+              >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete Organization
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )
@@ -414,252 +503,273 @@ function getAvatarColor(name: string): { bg: string; text: string } {
   return colors[index]
 }
 
-function OrganizationListItem({ organization }: { organization: Organization }) {
+function OrganizationListItem({ organization, isAdmin, onDelete }: { organization: Organization; isAdmin?: boolean; onDelete?: (org: Organization) => void }) {
   const avatarColor = getAvatarColor(organization.legalName)
 
   return (
-    <Link href={`/reviewer/organizations/${organization.id}`}>
-      <motion.div
-        whileHover={{ y: -2 }}
-        transition={{ duration: 0.2 }}
-        className="group relative"
-      >
-        <GlassCard className="p-0 overflow-hidden" hover={false}>
-          {/* Status Accent Bar */}
-          <div
-            className={`absolute left-0 top-0 bottom-0 w-1 ${
-              organization.profileComplete
-                ? 'bg-gradient-to-b from-emerald-400 to-emerald-500'
-                : 'bg-gradient-to-b from-amber-400 to-amber-500'
-            }`}
-          />
+    <div className="relative group">
+      <Link href={`/reviewer/organizations/${organization.id}`}>
+        <motion.div
+          whileHover={{ y: -2 }}
+          transition={{ duration: 0.2 }}
+        >
+          <GlassCard className="p-0 overflow-hidden" hover={false}>
+            {/* Status Accent Bar */}
+            <div
+              className={`absolute left-0 top-0 bottom-0 w-1 ${
+                organization.profileComplete
+                  ? 'bg-gradient-to-b from-emerald-400 to-emerald-500'
+                  : 'bg-gradient-to-b from-amber-400 to-amber-500'
+              }`}
+            />
 
-          <div className="pl-5 pr-4 py-4">
-            <div className="flex items-start gap-4">
-              {/* Avatar */}
-              <div className={`w-12 h-12 rounded-xl ${avatarColor.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform mt-0.5`}>
-                <span className={`text-sm font-bold ${avatarColor.text}`}>
-                  {getInitials(organization.legalName)}
-                </span>
-              </div>
+            <div className="pl-5 pr-4 py-4">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className={`w-12 h-12 rounded-xl ${avatarColor.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform mt-0.5`}>
+                  <span className={`text-sm font-bold ${avatarColor.text}`}>
+                    {getInitials(organization.legalName)}
+                  </span>
+                </div>
 
-              {/* Main Content */}
-              <div className="flex-1 min-w-0">
-                {/* Name Row - Full name visible */}
-                <div className="flex flex-wrap items-start gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-[var(--hff-teal)] transition-colors">
-                    {organization.legalName}
-                  </h3>
-                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${
-                    organization.profileComplete
-                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50'
-                      : 'bg-amber-50 text-amber-600 border border-amber-200/50'
-                  }`}>
-                    {organization.profileComplete ? (
-                      <>
-                        <CheckCircle className="w-3 h-3" />
-                        Complete
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="w-3 h-3" />
-                        Pending
-                      </>
-                    )}
+                {/* Main Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Name Row - Full name visible */}
+                  <div className="flex flex-wrap items-start gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-[var(--hff-teal)] transition-colors">
+                      {organization.legalName}
+                    </h3>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${
+                      organization.profileComplete
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50'
+                        : 'bg-amber-50 text-amber-600 border border-amber-200/50'
+                    }`}>
+                      {organization.profileComplete ? (
+                        <>
+                          <CheckCircle className="w-3 h-3" />
+                          Complete
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3 h-3" />
+                          Pending
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  {organization.city && organization.state && (
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                      {organization.city}, {organization.state}
+                    </p>
+                  )}
+                </div>
+
+                {/* Metrics */}
+                <div className="hidden lg:flex items-center gap-6 flex-shrink-0">
+                  {/* Budget */}
+                  <div className="text-right min-w-[90px]">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Budget</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {organization.annualBudget
+                        ? `$${(organization.annualBudget / 1000).toFixed(0)}K`
+                        : '—'
+                      }
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="w-px h-10 bg-gray-200" />
+
+                  {/* Applications */}
+                  <div className="text-right min-w-[90px]">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Applications</p>
+                    <p className="text-lg font-bold text-gray-900 flex items-center justify-end gap-1">
+                      <FileText className="w-4 h-4 text-gray-400" />
+                      {organization.applicationCount}
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="w-px h-10 bg-gray-200" />
+
+                  {/* Last Submitted */}
+                  <div className="text-right min-w-[100px]">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Last Submitted</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      {organization.lastApplicationDate
+                        ? format(new Date(organization.lastApplicationDate), 'MMM d, yyyy')
+                        : '—'
+                      }
+                    </p>
                   </div>
                 </div>
 
-                {/* Location */}
-                {organization.city && organization.state && (
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    {organization.city}, {organization.state}
-                  </p>
-                )}
+                {/* Arrow */}
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 group-hover:bg-[var(--hff-teal)]/10 transition-colors flex-shrink-0">
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-teal)] transition-colors" />
+                </div>
               </div>
 
-              {/* Metrics */}
-              <div className="hidden lg:flex items-center gap-6 flex-shrink-0">
-                {/* Budget */}
-                <div className="text-right min-w-[90px]">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Budget</p>
-                  <p className="text-lg font-bold text-gray-900">
+              {/* Mobile/Tablet Metrics */}
+              <div className="lg:hidden mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="flex items-center gap-1.5 text-gray-600">
+                    <DollarSign className="w-4 h-4 text-gray-400" />
                     {organization.annualBudget
                       ? `$${(organization.annualBudget / 1000).toFixed(0)}K`
                       : '—'
                     }
-                  </p>
-                </div>
-
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200" />
-
-                {/* Applications */}
-                <div className="text-right min-w-[90px]">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Applications</p>
-                  <p className="text-lg font-bold text-gray-900 flex items-center justify-end gap-1">
+                  </span>
+                  <span className="flex items-center gap-1.5 text-gray-600">
                     <FileText className="w-4 h-4 text-gray-400" />
-                    {organization.applicationCount}
-                  </p>
+                    {organization.applicationCount} apps
+                  </span>
                 </div>
-
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200" />
-
-                {/* Last Submitted */}
-                <div className="text-right min-w-[100px]">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Last Submitted</p>
-                  <p className="text-sm font-medium text-gray-600">
-                    {organization.lastApplicationDate
-                      ? format(new Date(organization.lastApplicationDate), 'MMM d, yyyy')
-                      : '—'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 group-hover:bg-[var(--hff-teal)]/10 transition-colors flex-shrink-0">
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[var(--hff-teal)] transition-colors" />
-              </div>
-            </div>
-
-            {/* Mobile/Tablet Metrics */}
-            <div className="lg:hidden mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <DollarSign className="w-4 h-4 text-gray-400" />
-                  {organization.annualBudget
-                    ? `$${(organization.annualBudget / 1000).toFixed(0)}K`
-                    : '—'
+                <span className="text-xs text-gray-500">
+                  {organization.lastApplicationDate
+                    ? format(new Date(organization.lastApplicationDate), 'MMM d, yyyy')
+                    : 'No submissions'
                   }
                 </span>
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <FileText className="w-4 h-4 text-gray-400" />
-                  {organization.applicationCount} apps
-                </span>
               </div>
-              <span className="text-xs text-gray-500">
-                {organization.lastApplicationDate
-                  ? format(new Date(organization.lastApplicationDate), 'MMM d, yyyy')
-                  : 'No submissions'
-                }
-              </span>
             </div>
-          </div>
-        </GlassCard>
-      </motion.div>
-    </Link>
+          </GlassCard>
+        </motion.div>
+      </Link>
+      {isAdmin && onDelete && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(organization) }}
+          className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+          title="Delete organization"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   )
 }
 
-function OrganizationGridItem({ organization }: { organization: Organization }) {
+function OrganizationGridItem({ organization, isAdmin, onDelete }: { organization: Organization; isAdmin?: boolean; onDelete?: (org: Organization) => void }) {
   const avatarColor = getAvatarColor(organization.legalName)
 
   return (
-    <Link href={`/reviewer/organizations/${organization.id}`}>
-      <motion.div
-        whileHover={{ y: -4 }}
-        transition={{ duration: 0.2 }}
-        className="h-full"
-      >
-        <GlassCard className="p-0 overflow-hidden h-full flex flex-col" hover={false}>
-          {/* Header with gradient based on status */}
-          <div className={`p-4 ${
-            organization.profileComplete
-              ? 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50'
-              : 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50'
-          }`}>
-            <div className="flex items-start justify-between mb-3">
-              <div className={`w-14 h-14 rounded-xl ${avatarColor.bg} flex items-center justify-center shadow-sm`}>
-                <span className={`text-lg font-bold ${avatarColor.text}`}>
-                  {getInitials(organization.legalName)}
-                </span>
-              </div>
-              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${
-                organization.profileComplete
-                  ? 'bg-white/80 text-emerald-600 border border-emerald-200/50'
-                  : 'bg-white/80 text-amber-600 border border-amber-200/50'
-              }`}>
-                {organization.profileComplete ? (
-                  <>
-                    <CheckCircle className="w-3 h-3" />
-                    Complete
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-3 h-3" />
-                    Pending
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Organization Name */}
-            <h3 className="font-semibold text-gray-900 line-clamp-2 min-h-[48px] mb-1">
-              {organization.legalName}
-            </h3>
-
-            {/* Location */}
-            {organization.city && organization.state && (
-              <p className="text-sm text-gray-500 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
-                {organization.city}, {organization.state}
-              </p>
-            )}
-          </div>
-
-          {/* Stats Section */}
-          <div className="p-4 flex-1 flex flex-col justify-end">
-            {/* Budget Display */}
-            {organization.annualBudget && (
-              <div className="mb-4 p-3 rounded-xl bg-gray-50/80 border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 font-medium">Annual Budget</span>
-                  <TrendingUp className="w-4 h-4 text-[var(--hff-sage)]" />
+    <div className="relative group h-full">
+      <Link href={`/reviewer/organizations/${organization.id}`}>
+        <motion.div
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="h-full"
+        >
+          <GlassCard className="p-0 overflow-hidden h-full flex flex-col" hover={false}>
+            {/* Header with gradient based on status */}
+            <div className={`p-4 ${
+              organization.profileComplete
+                ? 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50'
+                : 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50'
+            }`}>
+              <div className="flex items-start justify-between mb-3">
+                <div className={`w-14 h-14 rounded-xl ${avatarColor.bg} flex items-center justify-center shadow-sm`}>
+                  <span className={`text-lg font-bold ${avatarColor.text}`}>
+                    {getInitials(organization.legalName)}
+                  </span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  ${organization.annualBudget.toLocaleString()}
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${
+                  organization.profileComplete
+                    ? 'bg-white/80 text-emerald-600 border border-emerald-200/50'
+                    : 'bg-white/80 text-amber-600 border border-amber-200/50'
+                }`}>
+                  {organization.profileComplete ? (
+                    <>
+                      <CheckCircle className="w-3 h-3" />
+                      Complete
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-3 h-3" />
+                      Pending
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Organization Name */}
+              <h3 className="font-semibold text-gray-900 line-clamp-2 min-h-[48px] mb-1">
+                {organization.legalName}
+              </h3>
+
+              {/* Location */}
+              {organization.city && organization.state && (
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {organization.city}, {organization.state}
                 </p>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Metrics Row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100/50">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-500" />
-                  <div>
-                    <p className="text-lg font-bold text-gray-900">{organization.applicationCount}</p>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Applications</p>
+            {/* Stats Section */}
+            <div className="p-4 flex-1 flex flex-col justify-end">
+              {/* Budget Display */}
+              {organization.annualBudget && (
+                <div className="mb-4 p-3 rounded-xl bg-gray-50/80 border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 font-medium">Annual Budget</span>
+                    <TrendingUp className="w-4 h-4 text-[var(--hff-sage)]" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    ${organization.annualBudget.toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {/* Metrics Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100/50">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-500" />
+                    <div>
+                      <p className="text-lg font-bold text-gray-900">{organization.applicationCount}</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wide">Applications</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-2.5 rounded-lg bg-purple-50/50 border border-purple-100/50">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-purple-500" />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {organization.lastApplicationDate
-                        ? format(new Date(organization.lastApplicationDate), 'MMM d')
-                        : '—'
-                      }
-                    </p>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Submitted</p>
+                <div className="p-2.5 rounded-lg bg-purple-50/50 border border-purple-100/50">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-purple-500" />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {organization.lastApplicationDate
+                          ? format(new Date(organization.lastApplicationDate), 'MMM d')
+                          : '—'
+                        }
+                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wide">Submitted</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between">
-            <span className="text-xs text-gray-500">View Details</span>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </div>
-        </GlassCard>
-      </motion.div>
-    </Link>
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between">
+              <span className="text-xs text-gray-500">View Details</span>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </div>
+          </GlassCard>
+        </motion.div>
+      </Link>
+      {isAdmin && onDelete && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(organization) }}
+          className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+          title="Delete organization"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   )
 }

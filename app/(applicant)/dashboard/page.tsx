@@ -88,8 +88,8 @@ const statusConfig = {
   SUBMITTED: { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Send, label: 'Submitted' },
   UNDER_REVIEW: { color: 'bg-purple-100 text-purple-700 border-purple-200', icon: Clock, label: 'Under Review' },
   INFO_REQUESTED: { color: 'bg-amber-100 text-amber-700 border-amber-200', icon: AlertCircle, label: 'Info Requested' },
-  APPROVED: { color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2, label: 'Approved' },
-  DECLINED: { color: 'bg-red-100 text-red-700 border-red-200', icon: AlertCircle, label: 'Declined' },
+  APPROVED: { color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2, label: 'Award Consideration' },
+  DECLINED: { color: 'bg-red-100 text-red-700 border-red-200', icon: AlertCircle, label: 'No Funding Consideration' },
   WITHDRAWN: { color: 'bg-gray-100 text-gray-500 border-gray-200', icon: FileText, label: 'Withdrawn' },
 }
 
@@ -97,8 +97,8 @@ const loiStatusConfig = {
   DRAFT: { color: 'bg-slate-100 text-slate-700', icon: FileText, label: 'Draft' },
   SUBMITTED: { color: 'bg-amber-100 text-amber-700', icon: Send, label: 'Submitted' },
   UNDER_REVIEW: { color: 'bg-blue-100 text-blue-700', icon: Clock, label: 'Under Review' },
-  APPROVED: { color: 'bg-green-100 text-green-700', icon: CheckCircle2, label: 'Approved' },
-  DECLINED: { color: 'bg-red-100 text-red-700', icon: AlertCircle, label: 'Declined' },
+  APPROVED: { color: 'bg-green-100 text-green-700', icon: CheckCircle2, label: 'Award Consideration' },
+  DECLINED: { color: 'bg-red-100 text-red-700', icon: AlertCircle, label: 'No Funding Consideration' },
   WITHDRAWN: { color: 'bg-gray-100 text-gray-500', icon: FileText, label: 'Withdrawn' },
 }
 
@@ -157,7 +157,11 @@ export default function DashboardPage() {
   // Check if user can start a new LOI for the current cycle
   const canStartNewLOI = activeCycle?.acceptingLOIs && !currentCycleLOI && organization && profileCompletion === 100
 
-  // Check if user has an approved LOI that needs full application
+  // Check if user has an approved LOI with a draft application to continue
+  const approvedLOIsWithDraftApp = lois.filter(
+    (l) => l.status === 'APPROVED' && l.application && l.application.status === 'DRAFT'
+  )
+  // Fallback: approved LOIs without an application (edge case)
   const approvedLOIsPendingApp = lois.filter((l) => l.status === 'APPROVED' && !l.application)
 
   if (loading || !isLoaded) {
@@ -368,28 +372,56 @@ export default function DashboardPage() {
           </StaggerItem>
         </StaggerContainer>
 
-        {/* Approved LOI Alert - Prompt to complete full application */}
+        {/* Prominent Full Application Banner - when approved LOI has draft application */}
         <AnimatePresence>
-          {approvedLOIsPendingApp.length > 0 && (
+          {approvedLOIsWithDraftApp.length > 0 && (
             <FadeIn delay={0.15}>
-              <GlassCard variant="elevated" className="mb-8 border-l-4 border-l-green-500 overflow-hidden">
+              <GlassCard className="mb-8 overflow-hidden bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg shadow-green-100">
                 <div className="flex flex-col md:flex-row md:items-center gap-4 p-6">
-                  <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-7 h-7 text-green-600" />
+                  <div className="w-16 h-16 rounded-2xl bg-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/30">
+                    <CheckCircle2 className="w-8 h-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">LOI Approved!</h3>
-                    <p className="text-gray-600">
-                      Your Letter of Interest has been approved. Complete your full grant application to continue.
+                    <h3 className="text-xl font-bold text-green-900 mb-1">Your LOI Has Been Selected for Award Consideration</h3>
+                    <p className="text-green-700">
+                      Complete your full grant application for <strong>{approvedLOIsWithDraftApp[0].projectTitle || 'your project'}</strong> to continue the funding process.
                     </p>
                   </div>
                   <Button
                     asChild
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20"
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 text-base px-8"
+                  >
+                    <Link href={`/applications/${approvedLOIsWithDraftApp[0].application!.id}/edit`}>
+                      Continue Full Application
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Link>
+                  </Button>
+                </div>
+              </GlassCard>
+            </FadeIn>
+          )}
+          {approvedLOIsPendingApp.length > 0 && approvedLOIsWithDraftApp.length === 0 && (
+            <FadeIn delay={0.15}>
+              <GlassCard className="mb-8 overflow-hidden bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg shadow-green-100">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 p-6">
+                  <div className="w-16 h-16 rounded-2xl bg-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/30">
+                    <CheckCircle2 className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-green-900 mb-1">Your LOI Has Been Selected for Award Consideration</h3>
+                    <p className="text-green-700">
+                      View your approved Letter of Interest to proceed with the full application.
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 text-base px-8"
                   >
                     <Link href={`/loi/${approvedLOIsPendingApp[0].id}`}>
-                      Continue Application
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      View LOI Details
+                      <ArrowRight className="w-5 h-5 ml-2" />
                     </Link>
                   </Button>
                 </div>

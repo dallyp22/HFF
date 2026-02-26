@@ -126,11 +126,11 @@ export async function sendLOIApproved(params: {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #059669; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">LOI Approved!</h1>
+        <h1 style="color: white; margin: 0;">Award Consideration</h1>
       </div>
       <div style="padding: 30px; background: #f9fafb;">
         <p style="font-size: 16px; color: #374151;">
-          Great news! Your Letter of Interest for <strong>${projectTitle || 'your project'}</strong> has been approved.
+          Great news! Your Letter of Interest for <strong>${projectTitle || 'your project'}</strong> has been selected for award consideration.
         </p>
 
         <p style="font-size: 16px; color: #374151;">
@@ -158,7 +158,7 @@ export async function sendLOIApproved(params: {
 
   return sendEmail({
     to: applicantEmail,
-    subject: `LOI Approved: ${projectTitle || organizationName}`,
+    subject: `Award Consideration: ${projectTitle || organizationName}`,
     html,
   })
 }
@@ -181,11 +181,11 @@ export async function sendLOIDeclined(params: {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #6b7280; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">LOI Update</h1>
+        <h1 style="color: white; margin: 0;">LOI Decision</h1>
       </div>
       <div style="padding: 30px; background: #f9fafb;">
         <p style="font-size: 16px; color: #374151;">
-          Thank you for your interest in the Heistand Family Foundation. After careful review, we regret to inform you that your Letter of Interest for <strong>${projectTitle || 'your project'}</strong> has not been selected to move forward at this time.
+          Thank you for your interest in the Heistand Family Foundation. After careful review, we regret to inform you that your Letter of Interest for <strong>${projectTitle || 'your project'}</strong> has not been selected for funding consideration at this time.
         </p>
 
         ${reasonText}
@@ -209,7 +209,7 @@ export async function sendLOIDeclined(params: {
 
   return sendEmail({
     to: applicantEmail,
-    subject: `LOI Update: ${projectTitle || organizationName}`,
+    subject: `LOI Decision: No Funding Consideration - ${projectTitle || organizationName}`,
     html,
   })
 }

@@ -6,6 +6,15 @@ import { GlassBadge } from '@/components/glass/GlassBadge'
 import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/motion/FadeIn'
 import { StaggerContainer } from '@/components/motion/StaggerContainer'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -27,8 +36,11 @@ import {
   ChevronDown,
   MapPin,
   Eye,
+  Trash2,
+  Loader2,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
+import { toast } from 'sonner'
 
 interface Application {
   id: string
@@ -49,6 +61,7 @@ interface ReviewerApplicationsClientProps {
   initialStatus?: string
   initialCycle?: string
   initialSearch?: string
+  isAdmin?: boolean
 }
 
 const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
@@ -105,16 +118,21 @@ const cycleFilters = [
 ]
 
 export function ReviewerApplicationsClient({
-  applications,
+  applications: initialApplications,
   initialStatus = '',
   initialCycle = '',
   initialSearch = '',
+  isAdmin = false,
 }: ReviewerApplicationsClientProps) {
+  const [applications, setApplications] = useState(initialApplications)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState(initialStatus)
   const [cycleFilter, setCycleFilter] = useState(initialCycle)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [showFilters, setShowFilters] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Application | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
@@ -143,6 +161,29 @@ export function ReviewerApplicationsClient({
   }
 
   const hasActiveFilters = searchQuery || statusFilter || cycleFilter
+
+  const handleDeleteApplication = async () => {
+    if (!deleteTarget || deleteConfirmText !== 'DELETE') return
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/applications/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete application')
+      }
+      setApplications((prev) => prev.filter((a) => a.id !== deleteTarget.id))
+      toast.success(`Application "${deleteTarget.projectTitle || 'Untitled'}" has been deleted`)
+      setDeleteTarget(null)
+      setDeleteConfirmText('')
+    } catch (error: any) {
+      console.error('Error deleting application:', error)
+      toast.error(error.message || 'Failed to delete application')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -337,7 +378,7 @@ export function ReviewerApplicationsClient({
                 <div className="space-y-3">
                   {filteredApplications.map((app, index) => (
                     <FadeIn key={app.id} delay={0.05 * Math.min(index, 10)}>
-                      <ApplicationListItem application={app} />
+                      <ApplicationListItem application={app} isAdmin={isAdmin} onDelete={setDeleteTarget} />
                     </FadeIn>
                   ))}
                 </div>
@@ -354,7 +395,7 @@ export function ReviewerApplicationsClient({
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredApplications.map((app, index) => (
                     <FadeIn key={app.id} delay={0.05 * Math.min(index, 10)}>
-                      <ApplicationGridItem application={app} />
+                      <ApplicationGridItem application={app} isAdmin={isAdmin} onDelete={setDeleteTarget} />
                     </FadeIn>
                   ))}
                 </div>
@@ -384,12 +425,61 @@ export function ReviewerApplicationsClient({
             </GlassCard>
           </FadeIn>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirmText('') } }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600">Delete Application</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>
+                    You are about to permanently delete the application <strong>&quot;{deleteTarget?.projectTitle || 'Untitled'}&quot;</strong> from <strong>{deleteTarget?.organizationName}</strong>.
+                  </p>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <h4 className="font-semibold text-red-900 mb-2">This action cannot be undone. It will delete:</h4>
+                    <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+                      <li>All reviewer notes and votes</li>
+                      <li>All status history records</li>
+                      <li>All communications</li>
+                      <li>All uploaded documents</li>
+                      <li>All highlights and budget assessments</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Type <strong>DELETE</strong> to confirm
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteApplication}
+                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+              >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete Application
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )
 }
 
-function ApplicationListItem({ application }: { application: Application }) {
+function ApplicationListItem({ application, isAdmin, onDelete }: { application: Application; isAdmin?: boolean; onDelete?: (app: Application) => void }) {
   const status = statusConfig[application.status] || statusConfig.DRAFT
 
   return (
@@ -450,23 +540,34 @@ function ApplicationListItem({ application }: { application: Application }) {
           </div>
         </div>
 
-        {/* Action Button */}
-        <Button
-          size="sm"
-          asChild
-          className="bg-[var(--hff-slate)] hover:bg-[var(--hff-slate)]/90 text-white gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity"
-        >
-          <Link href={`/reviewer/applications/${application.id}`}>
-            Review
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isAdmin && onDelete && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(application) }}
+              className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+              title="Delete application"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          <Button
+            size="sm"
+            asChild
+            className="bg-[var(--hff-slate)] hover:bg-[var(--hff-slate)]/90 text-white gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity"
+          >
+            <Link href={`/reviewer/applications/${application.id}`}>
+              Review
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </GlassCard>
   )
 }
 
-function ApplicationGridItem({ application }: { application: Application }) {
+function ApplicationGridItem({ application, isAdmin, onDelete }: { application: Application; isAdmin?: boolean; onDelete?: (app: Application) => void }) {
   const status = statusConfig[application.status] || statusConfig.DRAFT
 
   return (
@@ -527,17 +628,28 @@ function ApplicationGridItem({ application }: { application: Application }) {
             {format(new Date(application.submittedAt), 'MMM d, yyyy')}
           </span>
         )}
-        <Button
-          size="sm"
-          variant="ghost"
-          asChild
-          className="gap-1 text-[var(--hff-teal)] hover:bg-[var(--hff-teal)]/10"
-        >
-          <Link href={`/reviewer/applications/${application.id}`}>
-            Review
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          {isAdmin && onDelete && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(application) }}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+              title="Delete application"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            asChild
+            className="gap-1 text-[var(--hff-teal)] hover:bg-[var(--hff-teal)]/10"
+          >
+            <Link href={`/reviewer/applications/${application.id}`}>
+              Review
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </GlassCard>
   )

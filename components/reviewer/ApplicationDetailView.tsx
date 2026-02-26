@@ -31,7 +31,9 @@ import {
   TrendingUp,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { formatFileSize } from '@/lib/storage'
 import { AISummaryDisplay } from '@/components/reviewer/AISummaryDisplay'
@@ -107,6 +109,7 @@ export function ApplicationDetailView({
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
   const [highlights, setHighlights] = useState<Highlight[]>(application.highlights || [])
+  const [analysisPanelOpen, setAnalysisPanelOpen] = useState(false)
 
   const fetchHighlights = useCallback(async () => {
     try {
@@ -241,33 +244,73 @@ export function ApplicationDetailView({
 
       {/* Main Content - Split Panel */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - AI Analysis */}
+        {/* Left Sidebar - Staff Notes & Analysis */}
         <FadeIn delay={0.1} className="w-80 lg:w-96 flex-shrink-0 hidden md:block">
           <div className="h-full overflow-y-auto bg-gradient-to-b from-[var(--hff-teal)]/[0.02] via-slate-50/80 to-white/60 backdrop-blur-sm border-r border-[var(--hff-teal)]/10 p-5">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-200/50">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-100 to-violet-100 shadow-sm">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-gray-900">AI Analysis</h2>
-                <p className="text-[10px] text-gray-500 font-medium">Powered by GPT-4</p>
-              </div>
+            {/* Header with collapse toggle */}
+            <div className="mb-5 pb-4 border-b border-gray-200/50">
+              <button
+                onClick={() => setAnalysisPanelOpen(!analysisPanelOpen)}
+                className="w-full flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-gray-100 shadow-sm">
+                    <FileText className="w-5 h-5 text-gray-500" />
+                  </div>
+                  <div className="text-left">
+                    <h2 className="text-sm font-bold text-gray-900">Staff Notes & Analysis</h2>
+                    <p className="text-[10px] text-gray-500 font-medium">Supplementary analysis</p>
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ rotate: analysisPanelOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                </motion.div>
+              </button>
+
+              {/* Disclaimer */}
+              <p className="mt-3 text-[10px] text-gray-400 leading-relaxed">
+                AI analysis is supplementary. Decisions should be based on thorough application review.
+              </p>
             </div>
 
-            <AISummaryDisplay
-              summary={application.aiSummary}
-              missionAlignment={application.aiMissionAlignment}
-              budgetAnalysis={application.aiBudgetAnalysis}
-              strengths={application.aiStrengths || []}
-              concerns={application.aiConcerns || []}
-              questions={application.aiQuestions || []}
-              generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
-              applicationId={application.id}
-              isAdmin={userIsAdmin}
-              highlights={highlights}
-              onHighlightChange={fetchHighlights}
-            />
+            <AnimatePresence initial={false}>
+              {analysisPanelOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  className="overflow-hidden"
+                >
+                  <AISummaryDisplay
+                    summary={application.aiSummary}
+                    missionAlignment={application.aiMissionAlignment}
+                    budgetAnalysis={application.aiBudgetAnalysis}
+                    strengths={application.aiStrengths || []}
+                    concerns={application.aiConcerns || []}
+                    questions={application.aiQuestions || []}
+                    generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
+                    applicationId={application.id}
+                    isAdmin={userIsAdmin}
+                    highlights={highlights}
+                    onHighlightChange={fetchHighlights}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!analysisPanelOpen && (
+              <button
+                onClick={() => setAnalysisPanelOpen(true)}
+                className="w-full py-2.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+                Show Analysis
+              </button>
+            )}
           </div>
         </FadeIn>
 
@@ -531,6 +574,15 @@ function OverviewTab({
           <Building2 className="w-4 h-4 text-[var(--hff-teal)]" />
           Organization Summary
         </h3>
+
+        {/* Organization Description */}
+        {application.organization.organizationDescription && (
+          <div className="mb-4 pb-4 border-b border-gray-100">
+            <p className="text-sm font-medium text-gray-700 mb-1">Organization Description</p>
+            <p className="text-gray-600 whitespace-pre-wrap">{application.organization.organizationDescription}</p>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-3 gap-4 mb-4">
           <div className="p-3 rounded-lg bg-gray-50">
             <p className="text-xs text-gray-500 mb-1">Annual Budget</p>
@@ -567,6 +619,142 @@ function OverviewTab({
           <ChevronRight className="w-4 h-4" />
         </Link>
       </GlassCard>
+
+      {/* Form 990 Financial Breakdown */}
+      {(application.organization.form990ProgramExpenses || application.organization.form990AdminExpenses || application.organization.form990FundraisingExpenses) && (() => {
+        const programExpenses = application.organization.form990ProgramExpenses ? parseFloat(application.organization.form990ProgramExpenses.toString()) : 0
+        const adminExpenses = application.organization.form990AdminExpenses ? parseFloat(application.organization.form990AdminExpenses.toString()) : 0
+        const fundraisingExpenses = application.organization.form990FundraisingExpenses ? parseFloat(application.organization.form990FundraisingExpenses.toString()) : 0
+        const totalExpenses = application.organization.form990TotalExpenses
+          ? parseFloat(application.organization.form990TotalExpenses.toString())
+          : (programExpenses + adminExpenses + fundraisingExpenses)
+        const programPct = totalExpenses > 0 ? (programExpenses / totalExpenses) * 100 : 0
+        const adminPct = totalExpenses > 0 ? (adminExpenses / totalExpenses) * 100 : 0
+        const fundraisingPct = totalExpenses > 0 ? (fundraisingExpenses / totalExpenses) * 100 : 0
+
+        const programColor = programPct >= 75 ? 'text-emerald-700' : programPct >= 50 ? 'text-amber-700' : 'text-red-700'
+        const programBg = programPct >= 75 ? 'from-emerald-50 to-green-50 border-emerald-200' : programPct >= 50 ? 'from-amber-50 to-yellow-50 border-amber-200' : 'from-red-50 to-rose-50 border-red-200'
+        const programBarColor = programPct >= 75 ? 'bg-emerald-500' : programPct >= 50 ? 'bg-amber-500' : 'bg-red-500'
+
+        return (
+          <GlassCard className="p-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
+              <DollarSign className="w-4 h-4 text-[var(--hff-teal)]" />
+              Form 990 Financial Breakdown {application.organization.form990Year ? `(${application.organization.form990Year})` : ''}
+            </h3>
+            <div className="grid sm:grid-cols-3 gap-4 mb-4">
+              <div className={`p-4 rounded-xl bg-gradient-to-br ${programBg} border`}>
+                <p className="text-xs text-gray-500 mb-1">Program Expenses</p>
+                <p className={`text-2xl font-bold ${programColor}`}>
+                  ${programExpenses.toLocaleString()}
+                </p>
+                <p className={`text-sm font-semibold mt-1 ${programColor}`}>
+                  {programPct.toFixed(1)}%
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
+                <p className="text-xs text-gray-500 mb-1">Admin Expenses</p>
+                <p className="text-2xl font-bold text-slate-700">
+                  ${adminExpenses.toLocaleString()}
+                </p>
+                <p className="text-sm font-semibold mt-1 text-slate-600">
+                  {adminPct.toFixed(1)}%
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200">
+                <p className="text-xs text-gray-500 mb-1">Fundraising Expenses</p>
+                <p className="text-2xl font-bold text-purple-700">
+                  ${fundraisingExpenses.toLocaleString()}
+                </p>
+                <p className="text-sm font-semibold mt-1 text-purple-600">
+                  {fundraisingPct.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+            {/* Stacked bar chart */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Expense Distribution</span>
+                <span>Total: ${totalExpenses.toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex">
+                {programPct > 0 && (
+                  <div
+                    className={`h-full ${programBarColor}`}
+                    style={{ width: `${programPct}%` }}
+                    title={`Program: ${programPct.toFixed(1)}%`}
+                  />
+                )}
+                {adminPct > 0 && (
+                  <div
+                    className="h-full bg-slate-400"
+                    style={{ width: `${adminPct}%` }}
+                    title={`Admin: ${adminPct.toFixed(1)}%`}
+                  />
+                )}
+                {fundraisingPct > 0 && (
+                  <div
+                    className="h-full bg-purple-400"
+                    style={{ width: `${fundraisingPct}%` }}
+                    title={`Fundraising: ${fundraisingPct.toFixed(1)}%`}
+                  />
+                )}
+              </div>
+              <div className="flex gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-2.5 h-2.5 rounded-full ${programBarColor}`} />
+                  Program
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                  Admin
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                  Fundraising
+                </span>
+              </div>
+            </div>
+          </GlassCard>
+        )
+      })()}
+
+      {/* Board Members */}
+      {application.boardMembers && (() => {
+        const members = typeof application.boardMembers === 'string'
+          ? JSON.parse(application.boardMembers)
+          : application.boardMembers
+        if (!Array.isArray(members) || members.length === 0) return null
+        return (
+          <GlassCard className="p-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
+              <Users className="w-4 h-4 text-[var(--hff-teal)]" />
+              Board of Directors
+              <span className="ml-auto text-xs font-normal text-gray-500">{members.length} members</span>
+            </h3>
+            <div className="overflow-hidden rounded-lg border border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Name</th>
+                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Title / Role</th>
+                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Affiliation</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {members.map((member: any, i: number) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2 text-gray-900 font-medium">{member.name || 'N/A'}</td>
+                      <td className="px-3 py-2 text-gray-700">{member.title || 'N/A'}</td>
+                      <td className="px-3 py-2 text-gray-700">{member.affiliation || 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </GlassCard>
+        )
+      })()}
     </div>
   )
 }
@@ -775,6 +963,42 @@ function ImpactTab({
 }) {
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Demographics & Poverty Metrics */}
+      {(application.clientDemographicDescription || application.childrenInPovertyImpacted || application.totalChildrenServedAnnually) && (
+        <GlassCard className="p-5">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
+            <Users className="w-4 h-4 text-[var(--hff-teal)]" />
+            Demographics & Poverty Metrics
+          </h3>
+          <div className="grid sm:grid-cols-3 gap-4 mb-4">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--hff-teal)]/5 to-[var(--hff-teal)]/10 border border-[var(--hff-teal)]/20">
+              <p className="text-xs text-gray-500 mb-1">Children in Poverty Impacted</p>
+              <p className="text-3xl font-bold text-[var(--hff-teal)]">
+                {application.childrenInPovertyImpacted?.toLocaleString() || 'N/A'}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--hff-sage)]/5 to-[var(--hff-sage)]/10 border border-[var(--hff-sage)]/20">
+              <p className="text-xs text-gray-500 mb-1">Total Children Served Annually</p>
+              <p className="text-3xl font-bold text-[var(--hff-sage)]">
+                {application.totalChildrenServedAnnually?.toLocaleString() || 'N/A'}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+              <p className="text-xs text-gray-500 mb-1">Poverty Percentage</p>
+              <p className="text-3xl font-bold text-amber-700">
+                {application.povertyPercentage ? `${parseFloat(application.povertyPercentage.toString()).toFixed(1)}%` : 'N/A'}
+              </p>
+            </div>
+          </div>
+          {application.clientDemographicDescription && (
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-sm font-medium text-gray-700 mb-1">Demographic Description</p>
+              <p className="text-gray-600">{application.clientDemographicDescription}</p>
+            </div>
+          )}
+        </GlassCard>
+      )}
+
       {/* Target Population */}
       <GlassCard className="p-5">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
@@ -903,7 +1127,10 @@ function ImpactTab({
 
 // Documents Tab Component
 function DocumentsTab({ documents }: { documents: any[] }) {
-  if (!documents || documents.length === 0) {
+  const projectPhotos = (documents || []).filter((d: any) => d.type === 'PROJECT_PHOTO')
+  const otherDocs = (documents || []).filter((d: any) => d.type !== 'PROJECT_PHOTO')
+
+  if ((!documents || documents.length === 0)) {
     return (
       <GlassCard className="py-16 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
@@ -916,33 +1143,86 @@ function DocumentsTab({ documents }: { documents: any[] }) {
   }
 
   return (
-    <div className="space-y-3 max-w-4xl">
-      {documents.map((doc: any, index: number) => (
-        <motion.div
-          key={doc.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-        >
-          <GlassCard className="p-4 flex items-center justify-between hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[var(--hff-teal)]/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-[var(--hff-teal)]" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">{doc.name}</p>
-                <p className="text-xs text-gray-500">{formatFileSize(doc.fileSize)}</p>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" asChild className="gap-1.5">
-              <a href={doc.storageUrl} target="_blank" rel="noopener noreferrer">
-                <Download className="w-4 h-4" />
-                Download
-              </a>
-            </Button>
-          </GlassCard>
-        </motion.div>
-      ))}
+    <div className="space-y-6 max-w-4xl">
+      {/* Project Photos Gallery */}
+      {projectPhotos.length > 0 && (
+        <div>
+          <h3 className="flex items-center gap-2 text-md font-semibold text-gray-900 mb-3">
+            <ImageIcon className="w-5 h-5 text-[var(--hff-teal)]" />
+            Project Photos
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {projectPhotos.map((photo: any, index: number) => (
+              <motion.div
+                key={photo.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                className="group relative"
+              >
+                <div className="aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-100">
+                  <img
+                    src={photo.storageUrl}
+                    alt={photo.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <p className="text-xs text-gray-500 truncate flex-1">{photo.fileName}</p>
+                  <a
+                    href={photo.storageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-[var(--hff-teal)] hover:underline ml-2 shrink-0"
+                  >
+                    Full size
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Other Documents */}
+      {otherDocs.length > 0 && (
+        <div>
+          {projectPhotos.length > 0 && (
+            <h3 className="flex items-center gap-2 text-md font-semibold text-gray-900 mb-3">
+              <Folder className="w-5 h-5 text-[var(--hff-teal)]" />
+              Documents
+            </h3>
+          )}
+          <div className="space-y-3">
+            {otherDocs.map((doc: any, index: number) => (
+              <motion.div
+                key={doc.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <GlassCard className="p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[var(--hff-teal)]/10 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-[var(--hff-teal)]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{doc.name}</p>
+                      <p className="text-xs text-gray-500">{formatFileSize(doc.fileSize)}</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" asChild className="gap-1.5">
+                    <a href={doc.storageUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="w-4 h-4" />
+                      Download
+                    </a>
+                  </Button>
+                </GlassCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

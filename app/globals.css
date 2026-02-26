@@ -308,3 +308,179 @@
     transform: translateX(100%);
   }
 }
+
+@keyframes fadeInTooltip {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutTooltip {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* === Print Utilities === */
+.no-print {
+  /* visible on screen, hidden in print */
+}
+
+.print-only {
+  display: none !important;
+}
+
+/* === Print Styles === */
+@media print {
+  /* Page setup */
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+
+  /* Force white background and black text */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide non-content elements */
+  .no-print,
+  nav,
+  .sidebar,
+  header,
+  footer,
+  button:not(.print-include),
+  [data-sonner-toaster],
+  [role="status"],
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Print header for HFF branding */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #204652;
+  }
+
+  .print-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #204652;
+    margin: 0;
+  }
+
+  .print-header h2 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #536872;
+    margin: 0.25rem 0 0 0;
+  }
+
+  .print-header p {
+    font-size: 0.875rem;
+    color: #536872;
+    margin: 0.5rem 0 0 0;
+  }
+
+  /* Clean up glass/card elements for print */
+  .glass,
+  .glass-teal,
+  .glass-elevated {
+    background: white !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* Remove shadows and transparency from all cards */
+  [class*="shadow"],
+  [class*="backdrop-blur"] {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Ensure text is readable */
+  * {
+    color: black !important;
+    text-shadow: none !important;
+  }
+
+  /* Preserve teal heading colors for visual hierarchy */
+  .print-header h1 {
+    color: #204652 !important;
+  }
+
+  .print-header h2,
+  .print-header p {
+    color: #536872 !important;
+  }
+
+  /* Page break utility */
+  .print-page-break {
+    page-break-before: always;
+  }
+
+  /* Prevent orphans/widows */
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+
+  /* Keep sections together */
+  .print-keep-together {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure links show their URL in print */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.75rem;
+    color: #666 !important;
+  }
+
+  /* But not for navigation links */
+  nav a::after,
+  .no-print a::after {
+    content: none;
+  }
+
+  /* Remove animations */
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+  }
+
+  /* Adjust container for print */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}

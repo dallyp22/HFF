@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { isAdmin } from '@/lib/auth/access'
 import { ReviewerOrganizationsClient } from '@/components/reviewer/ReviewerOrganizationsClient'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,7 @@ export default async function OrganizationsPage({
 }) {
   const params = await searchParams
   const searchQuery = params.search
+  const userIsAdmin = await isAdmin()
 
   const organizations = await prisma.organization.findMany({
     where: {
@@ -51,6 +53,7 @@ export default async function OrganizationsPage({
         lastApplicationDate: org.applications[0]?.submittedAt?.toISOString() || null,
       }))}
       initialSearch={searchQuery}
+      isAdmin={userIsAdmin}
     />
   )
 }

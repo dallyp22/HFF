@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { isAdmin } from '@/lib/auth/access'
 import { ReviewerApplicationsClient } from '@/components/reviewer/ReviewerApplicationsClient'
 
 export const dynamic = 'force-dynamic'
@@ -12,6 +13,7 @@ export default async function ReviewerApplicationsPage({
   const statusFilter = params.status
   const cycleFilter = params.cycle
   const searchQuery = params.search
+  const userIsAdmin = await isAdmin()
 
   const applications = await prisma.application.findMany({
     where: {
@@ -54,6 +56,7 @@ export default async function ReviewerApplicationsPage({
       initialStatus={statusFilter}
       initialCycle={cycleFilter}
       initialSearch={searchQuery}
+      isAdmin={userIsAdmin}
     />
   )
 }

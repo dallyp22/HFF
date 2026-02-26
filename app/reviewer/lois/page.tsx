@@ -8,8 +8,18 @@ import { FadeIn } from '@/components/motion/FadeIn'
 import { StaggerContainer, StaggerItem } from '@/components/motion/StaggerContainer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   FileText,
   Search,
@@ -25,6 +35,7 @@ import {
   Building2,
   Target,
   Clock,
+  Trash2,
 } from 'lucide-react'
 
 interface LOI {
@@ -57,8 +68,8 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
   DRAFT: { label: 'Draft', variant: 'default', icon: FileText },
   SUBMITTED: { label: 'Submitted', variant: 'warning', icon: Send },
   UNDER_REVIEW: { label: 'Under Review', variant: 'warning', icon: Eye },
-  APPROVED: { label: 'Approved', variant: 'success', icon: CheckCircle2 },
-  DECLINED: { label: 'Declined', variant: 'error', icon: XCircle },
+  APPROVED: { label: 'Award Consideration', variant: 'success', icon: CheckCircle2 },
+  DECLINED: { label: 'No Funding Consideration', variant: 'error', icon: XCircle },
 }
 
 const focusAreaLabels: Record<string, string> = {
@@ -71,8 +82,8 @@ const statusFilters = [
   { value: '', label: 'All Status' },
   { value: 'SUBMITTED', label: 'Submitted' },
   { value: 'UNDER_REVIEW', label: 'Under Review' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'DECLINED', label: 'Declined' },
+  { value: 'APPROVED', label: 'Award Consideration' },
+  { value: 'DECLINED', label: 'No Funding Consideration' },
 ]
 
 export default function ReviewerLOIListPage() {
@@ -80,6 +91,25 @@ export default function ReviewerLOIListPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<LOI | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    async function checkAdmin() {
+      try {
+        const response = await fetch('/api/admin/check')
+        if (response.ok) {
+          const data = await response.json()
+          setIsAdmin(data.isAdmin)
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error)
+      }
+    }
+    checkAdmin()
+  }, [])
 
   useEffect(() => {
     async function fetchLOIs() {
@@ -136,6 +166,29 @@ export default function ReviewerLOIListPage() {
     underReview: lois.filter((l) => l.status === 'UNDER_REVIEW').length,
     approved: lois.filter((l) => l.status === 'APPROVED').length,
     declined: lois.filter((l) => l.status === 'DECLINED').length,
+  }
+
+  const handleDeleteLOI = async () => {
+    if (!deleteTarget || deleteConfirmText !== 'DELETE') return
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/lois/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete LOI')
+      }
+      setLois((prev) => prev.filter((l) => l.id !== deleteTarget.id))
+      toast.success(`LOI "${deleteTarget.projectTitle || 'Untitled'}" has been deleted`)
+      setDeleteTarget(null)
+      setDeleteConfirmText('')
+    } catch (error: any) {
+      console.error('Error deleting LOI:', error)
+      toast.error(error.message || 'Failed to delete LOI')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   if (loading) {
@@ -202,7 +255,7 @@ export default function ReviewerLOIListPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
-                  <p className="text-xs text-gray-500">Approved</p>
+                  <p className="text-xs text-gray-500">Award Consideration</p>
                 </div>
               </div>
             </GlassCard>
@@ -213,7 +266,7 @@ export default function ReviewerLOIListPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{stats.declined}</p>
-                  <p className="text-xs text-gray-500">Declined</p>
+                  <p className="text-xs text-gray-500">No Funding Consideration</p>
                 </div>
               </div>
             </GlassCard>
@@ -266,6 +319,7 @@ export default function ReviewerLOIListPage() {
 
               return (
                 <StaggerItem key={loi.id}>
+                  <div className="relative group/delete">
                   <Link href={`/reviewer/lois/${loi.id}`}>
                     <GlassCard
                       variant={needsReview ? 'elevated' : 'default'}
@@ -352,6 +406,16 @@ export default function ReviewerLOIListPage() {
                       </div>
                     </GlassCard>
                   </Link>
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteTarget(loi) }}
+                      className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 opacity-0 group-hover/delete:opacity-100 transition-all shadow-sm"
+                      title="Delete LOI"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  </div>
                 </StaggerItem>
               )
             })}
@@ -373,6 +437,55 @@ export default function ReviewerLOIListPage() {
             </GlassCard>
           </FadeIn>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirmText('') } }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600">Delete Letter of Interest</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>
+                    You are about to permanently delete the LOI <strong>&quot;{deleteTarget?.projectTitle || 'Untitled'}&quot;</strong> from <strong>{deleteTarget?.organization.legalName}</strong>.
+                  </p>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <h4 className="font-semibold text-red-900 mb-2">This action cannot be undone. It will delete:</h4>
+                    <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+                      <li>The Letter of Interest and all status history</li>
+                      <li>All uploaded documents</li>
+                      {deleteTarget?.application && (
+                        <li>The linked application and all its data (notes, votes, communications)</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Type <strong>DELETE</strong> to confirm
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteLOI}
+                disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+              >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete LOI
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )

@@ -143,6 +143,7 @@ export function HighlightableText({
   } | null>(null)
 
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [showFirstUseTooltip, setShowFirstUseTooltip] = useState(false)
   const tooltipHoveredRef = useRef(false)
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -150,6 +151,20 @@ export function HighlightableText({
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // First-use tooltip: show once, then persist dismissal in localStorage
+  useEffect(() => {
+    if (!isAdmin || !mounted) return
+    const seen = localStorage.getItem('hff-highlight-tooltip-seen')
+    if (!seen) {
+      setShowFirstUseTooltip(true)
+      const timer = setTimeout(() => {
+        setShowFirstUseTooltip(false)
+        localStorage.setItem('hff-highlight-tooltip-seen', 'true')
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [isAdmin, mounted])
 
   // Helper to dismiss tooltip only if not hovering over it
   const scheduleTooltipDismiss = useCallback(() => {
@@ -327,11 +342,26 @@ export function HighlightableText({
         })}
       </div>
 
-      {/* Admin hint */}
-      {isAdmin && fieldHighlights.length === 0 && (
-        <div className="mt-1.5 flex items-center gap-1 text-xs text-gray-400">
+      {/* Admin hint - always visible on highlightable fields */}
+      {isAdmin && (
+        <div className="relative mt-1.5 flex items-center gap-1 text-xs text-gray-400">
           <Highlighter className="w-3 h-3" />
           <span>Select text to highlight</span>
+
+          {/* First-use animated tooltip */}
+          {showFirstUseTooltip && (
+            <div
+              className="absolute left-0 -top-10 z-50 animate-fade-in-tooltip"
+              style={{
+                animation: 'fadeInTooltip 0.3s ease-out forwards, fadeOutTooltip 0.5s ease-in 2.5s forwards',
+              }}
+            >
+              <div className="relative bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                Tip: Select any text to add a colored highlight with notes
+                <div className="absolute left-4 -bottom-1 w-2 h-2 rotate-45 bg-gray-900" />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

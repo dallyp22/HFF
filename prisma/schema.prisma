@@ -40,6 +40,7 @@ enum DocumentType {
   ANNUAL_REPORT
   ANNUAL_ORG_BUDGET
   END_OF_YEAR_FINANCIAL
+  PROJECT_PHOTO
   OTHER
 }
 
@@ -169,6 +170,10 @@ model Organization {
   form990AdminExpenses  Decimal? @db.Decimal(12, 2)
   form990FundraisingExpenses Decimal? @db.Decimal(12, 2)
   
+  // Profile Review Per Cycle
+  profileLastReviewedAt       DateTime?
+  profileLastReviewedForCycle String?
+
   // Profile Completion
   profileComplete       Boolean  @default(false)
   profileCompletedAt    DateTime?
@@ -295,6 +300,10 @@ model LetterOfInterest {
   completedSteps        Int[]        @default([])
   lastSavedAt           DateTime?
 
+  // Batch Release
+  notificationSent      Boolean      @default(false)
+  notificationSentAt    DateTime?
+
   // Submission tracking
   submittedAt           DateTime?
   submittedById         String?
@@ -414,6 +423,13 @@ model Application {
 
   // Board of Directors
   boardOfDirectors      String?           @db.Text  // List with affiliations
+  boardMembers          Json?             // [{name: string, title: string, affiliation: string}]
+
+  // Demographics (Children in Poverty metrics)
+  clientDemographicDescription String?    @db.Text
+  childrenInPovertyImpacted    Int?
+  totalChildrenServedAnnually  Int?
+  povertyPercentage            Decimal?   @db.Decimal(5,2)
 
   // Agreement & Signature
   agreementAccepted     Boolean           @default(false)

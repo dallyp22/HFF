@@ -78,6 +78,8 @@ export function validateFileType(file: File): boolean {
     'application/msword', // .doc
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
     'application/vnd.ms-excel', // .xls
+    'image/jpeg', // .jpg, .jpeg
+    'image/png', // .png
   ]
 
   return allowedTypes.includes(file.type)

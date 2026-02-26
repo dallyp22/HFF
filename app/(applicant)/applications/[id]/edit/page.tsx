@@ -24,6 +24,14 @@ import {
   Clock,
   Plus,
   Trash2,
+  Building2,
+  Info,
+  Camera,
+  Upload,
+  X,
+  Image as ImageIcon,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -38,6 +46,13 @@ export default function EditApplicationPage({
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [application, setApplication] = useState<any>(null)
   const [applicationId, setApplicationId] = useState<string>('')
+
+  // Board members state
+  const [boardMembers, setBoardMembers] = useState<{ name: string; title: string; affiliation: string }[]>([
+    { name: '', title: '', affiliation: '' },
+    { name: '', title: '', affiliation: '' },
+    { name: '', title: '', affiliation: '' },
+  ])
 
   // Structured funding sources state
   const [confirmedFunding, setConfirmedFunding] = useState<{ name: string; amount: string }[]>([
@@ -59,6 +74,15 @@ export default function EditApplicationPage({
 
   // Timeline details state
   const [timelineDetails, setTimelineDetails] = useState('')
+
+  // Project photos state
+  const [projectPhotos, setProjectPhotos] = useState<any[]>([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoDragActive, setPhotoDragActive] = useState(false)
+
+  // Project budget state
+  const [projectBudget, setProjectBudget] = useState<any | null>(null)
+  const [uploadingBudget, setUploadingBudget] = useState(false)
 
   const form = useForm()
 
@@ -113,6 +137,9 @@ export default function EditApplicationPage({
             measurementPlan: app.measurementPlan || '',
             sustainabilityPlan: app.sustainabilityPlan || '',
             beneficiariesCount: app.beneficiariesCount || '',
+            clientDemographicDescription: app.clientDemographicDescription || '',
+            childrenInPovertyImpacted: app.childrenInPovertyImpacted || '',
+            totalChildrenServedAnnually: app.totalChildrenServedAnnually || '',
           })
 
           // Populate structured funding sources from saved JSON
@@ -155,6 +182,31 @@ export default function EditApplicationPage({
           // Populate timeline details
           if (app.timelineDetails) {
             setTimelineDetails(app.timelineDetails)
+          }
+
+          // Populate board members from saved JSON
+          if (app.boardMembers) {
+            try {
+              const parsed = typeof app.boardMembers === 'string'
+                ? JSON.parse(app.boardMembers)
+                : app.boardMembers
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setBoardMembers(parsed)
+              }
+            } catch {}
+          }
+
+          // Fetch existing application documents (photos & budget)
+          try {
+            const docsResponse = await fetch(`/api/documents?applicationId=${applicationId}`)
+            if (docsResponse.ok) {
+              const docs = await docsResponse.json()
+              setProjectPhotos(docs.filter((d: any) => d.type === 'PROJECT_PHOTO'))
+              const budget = docs.find((d: any) => d.type === 'PROJECT_BUDGET')
+              if (budget) setProjectBudget(budget)
+            }
+          } catch (err) {
+            console.error('Error loading application documents:', err)
           }
         } else {
           toast.error('Application not found')
@@ -200,6 +252,9 @@ export default function EditApplicationPage({
           : previousGrants.filter((g) => g.date || g.amount || g.projectTitle)
       ),
       timelineDetails,
+      boardMembers: JSON.stringify(
+        boardMembers.filter((m) => m.name || m.title || m.affiliation)
+      ),
     }
   }
 
@@ -255,6 +310,147 @@ export default function EditApplicationPage({
       toast.error('Failed to submit application')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Photo upload handlers
+  function handlePhotoDrag(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setPhotoDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setPhotoDragActive(false)
+    }
+  }
+
+  function handlePhotoDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setPhotoDragActive(false)
+    if (e.dataTransfer.files) {
+      Array.from(e.dataTransfer.files).forEach((file) => uploadPhoto(file))
+    }
+  }
+
+  async function uploadPhoto(file: File) {
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast.error('Only JPEG and PNG images are accepted.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Each photo must be under 5MB.')
+      return
+    }
+    if (projectPhotos.length >= 3) {
+      toast.error('Maximum 3 photos allowed.')
+      return
+    }
+
+    setUploadingPhoto(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'PROJECT_PHOTO')
+      formData.append('name', file.name.replace(/\.[^/.]+$/, ''))
+      formData.append('scope', 'APPLICATION')
+      formData.append('applicationId', applicationId)
+
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const doc = await response.json()
+        setProjectPhotos((prev) => [...prev, doc])
+        toast.success('Photo uploaded successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload photo')
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error)
+      toast.error('Failed to upload photo')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  async function deletePhoto(docId: string) {
+    try {
+      const response = await fetch(`/api/documents/${docId}`, { method: 'DELETE' })
+      if (response.ok) {
+        setProjectPhotos((prev) => prev.filter((p) => p.id !== docId))
+        toast.success('Photo deleted')
+      } else {
+        toast.error('Failed to delete photo')
+      }
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      toast.error('Failed to delete photo')
+    }
+  }
+
+  // Budget upload handler
+  async function uploadBudget(file: File) {
+    const allowedBudgetTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ]
+    if (!allowedBudgetTypes.includes(file.type)) {
+      toast.error('Only PDF, XLS, and XLSX files are accepted for the budget.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File must be under 10MB.')
+      return
+    }
+
+    setUploadingBudget(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'PROJECT_BUDGET')
+      formData.append('name', file.name.replace(/\.[^/.]+$/, ''))
+      formData.append('scope', 'APPLICATION')
+      formData.append('applicationId', applicationId)
+
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const doc = await response.json()
+        setProjectBudget(doc)
+        toast.success('Budget uploaded successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload budget')
+      }
+    } catch (error) {
+      console.error('Error uploading budget:', error)
+      toast.error('Failed to upload budget')
+    } finally {
+      setUploadingBudget(false)
+    }
+  }
+
+  async function deleteBudget() {
+    if (!projectBudget) return
+    try {
+      const response = await fetch(`/api/documents/${projectBudget.id}`, { method: 'DELETE' })
+      if (response.ok) {
+        setProjectBudget(null)
+        toast.success('Budget deleted')
+      } else {
+        toast.error('Failed to delete budget')
+      }
+    } catch (error) {
+      console.error('Error deleting budget:', error)
+      toast.error('Failed to delete budget')
     }
   }
 
@@ -319,6 +515,23 @@ export default function EditApplicationPage({
         </FadeIn>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Organization Description (read-only) */}
+          {application.organization?.organizationDescription && (
+            <FadeIn delay={0.07}>
+              <GlassCard className="p-6 bg-gradient-to-r from-gray-50/80 to-slate-50/80">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-2">
+                  <Building2 className="w-5 h-5 text-[var(--hff-teal)]" />
+                  Organization Description
+                </h2>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  From your Organization Profile
+                </p>
+                <p className="text-gray-700 whitespace-pre-wrap">{application.organization.organizationDescription}</p>
+              </GlassCard>
+            </FadeIn>
+          )}
+
           {/* Project Overview */}
           <FadeIn delay={0.1}>
             <GlassCard className="p-6">
@@ -428,6 +641,61 @@ export default function EditApplicationPage({
                     className="bg-white/50"
                   />
                 </div>
+              </div>
+            </GlassCard>
+          </FadeIn>
+
+          {/* Demographics & Poverty Metrics */}
+          <FadeIn delay={0.17}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <Users className="w-5 h-5 text-[var(--hff-teal)]" />
+                Demographics & Poverty Metrics
+              </h2>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clientDemographicDescription">Client Demographic Description</Label>
+                  <Textarea
+                    id="clientDemographicDescription"
+                    {...form.register('clientDemographicDescription')}
+                    placeholder="Describe the demographics of the population your project serves..."
+                    rows={3}
+                    className="bg-white/50"
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="childrenInPovertyImpacted">Children in Poverty Impacted</Label>
+                    <Input
+                      id="childrenInPovertyImpacted"
+                      type="number"
+                      {...form.register('childrenInPovertyImpacted')}
+                      placeholder="Number of children in poverty"
+                      className="bg-white/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalChildrenServedAnnually">Total Children Served Annually</Label>
+                    <Input
+                      id="totalChildrenServedAnnually"
+                      type="number"
+                      {...form.register('totalChildrenServedAnnually')}
+                      placeholder="Total children served per year"
+                      className="bg-white/50"
+                    />
+                  </div>
+                </div>
+                {/* Auto-calculated poverty percentage */}
+                {form.watch('childrenInPovertyImpacted') && form.watch('totalChildrenServedAnnually') && (
+                  <div className="p-4 rounded-xl bg-[var(--hff-teal)]/5 border border-[var(--hff-teal)]/10">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Poverty Percentage:</span>{' '}
+                      <span className="text-[var(--hff-teal)] font-bold">
+                        {((parseInt(form.watch('childrenInPovertyImpacted')) / parseInt(form.watch('totalChildrenServedAnnually'))) * 100).toFixed(1)}%
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
             </GlassCard>
           </FadeIn>
@@ -737,8 +1005,289 @@ export default function EditApplicationPage({
             </GlassCard>
           </FadeIn>
 
-          {/* Action Buttons */}
+          {/* Board of Directors */}
+          <FadeIn delay={0.33}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                <Users className="w-5 h-5 text-[var(--hff-teal)]" />
+                Board of Directors
+              </h2>
+              <div className="space-y-3">
+                {boardMembers.length < 3 && (
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-blue-800">
+                      Please provide at least 3 board members for your application.
+                    </p>
+                  </div>
+                )}
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Name</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Title / Role</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Affiliation</th>
+                        <th className="w-10 px-3 py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {boardMembers.map((member, index) => (
+                        <tr key={index}>
+                          <td className="px-2 py-1.5">
+                            <Input
+                              placeholder="Full name"
+                              value={member.name}
+                              onChange={(e) => {
+                                const updated = [...boardMembers]
+                                updated[index] = { ...updated[index], name: e.target.value }
+                                setBoardMembers(updated)
+                              }}
+                              className="bg-white/50 border-0 shadow-none focus-visible:ring-1 h-8 text-sm"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <Input
+                              placeholder="e.g., Chair, Treasurer"
+                              value={member.title}
+                              onChange={(e) => {
+                                const updated = [...boardMembers]
+                                updated[index] = { ...updated[index], title: e.target.value }
+                                setBoardMembers(updated)
+                              }}
+                              className="bg-white/50 border-0 shadow-none focus-visible:ring-1 h-8 text-sm"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <Input
+                              placeholder="Organization / Company"
+                              value={member.affiliation}
+                              onChange={(e) => {
+                                const updated = [...boardMembers]
+                                updated[index] = { ...updated[index], affiliation: e.target.value }
+                                setBoardMembers(updated)
+                              }}
+                              className="bg-white/50 border-0 shadow-none focus-visible:ring-1 h-8 text-sm"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            {boardMembers.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() =>
+                                  setBoardMembers(boardMembers.filter((_, i) => i !== index))
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() =>
+                    setBoardMembers([...boardMembers, { name: '', title: '', affiliation: '' }])
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Board Member
+                </Button>
+              </div>
+            </GlassCard>
+          </FadeIn>
+
+          {/* Project Budget */}
           <FadeIn delay={0.35}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-2">
+                <FileSpreadsheet className="w-5 h-5 text-[var(--hff-teal)]" />
+                Project Budget
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Upload your project budget (PDF, XLS, or XLSX).{' '}
+                <a
+                  href="/documents/hff-budget-template.xlsx"
+                  download
+                  className="inline-flex items-center gap-1 text-[var(--hff-teal)] hover:underline font-medium"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download HFF Template
+                </a>
+              </p>
+
+              {!projectBudget ? (
+                <div className="space-y-3">
+                  <div
+                    className="border-2 border-dashed rounded-xl p-8 text-center transition-all border-gray-300 hover:border-gray-400 hover:bg-gray-50/50 cursor-pointer"
+                    onClick={() => document.getElementById('budget-upload')?.click()}
+                  >
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gray-100 flex items-center justify-center">
+                      <Upload className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                      Click to upload project budget
+                    </p>
+                    <p className="text-xs text-gray-500">PDF, XLS, or XLSX up to 10MB</p>
+                    <input
+                      id="budget-upload"
+                      type="file"
+                      accept=".pdf,.xls,.xlsx"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && uploadBudget(e.target.files[0])}
+                    />
+                  </div>
+                  {uploadingBudget && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading...
+                    </div>
+                  )}
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-amber-800">
+                      A project budget is recommended for application submission.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="border rounded-xl p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                        <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{projectBudget.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                          {(projectBudget.fileSize / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={projectBudget.storageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-[var(--hff-teal)] hover:underline"
+                      >
+                        View
+                      </a>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={deleteBudget}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </GlassCard>
+          </FadeIn>
+
+          {/* Project Photos */}
+          <FadeIn delay={0.37}>
+            <GlassCard className="p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-2">
+                <Camera className="w-5 h-5 text-[var(--hff-teal)]" />
+                Project Photos
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Upload up to 3 photos of your project (JPEG or PNG, max 5MB each).
+              </p>
+
+              {/* Thumbnail grid of uploaded photos */}
+              {projectPhotos.length > 0 && (
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  {projectPhotos.map((photo) => (
+                    <div key={photo.id} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-square bg-gray-100">
+                      <img
+                        src={photo.storageUrl}
+                        alt={photo.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-white hover:text-red-300 hover:bg-transparent"
+                          onClick={() => deletePhoto(photo.id)}
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                        <p className="text-xs text-white truncate">{photo.fileName}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload area (show only if under 3 photos) */}
+              {projectPhotos.length < 3 && (
+                <div
+                  onDragEnter={handlePhotoDrag}
+                  onDragLeave={handlePhotoDrag}
+                  onDragOver={handlePhotoDrag}
+                  onDrop={handlePhotoDrop}
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                    photoDragActive
+                      ? 'border-[var(--hff-teal)] bg-[var(--hff-teal)]/5 scale-[1.01]'
+                      : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50/50'
+                  }`}
+                  onClick={() => document.getElementById('photo-upload')?.click()}
+                >
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <ImageIcon className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">
+                    Drop photos here or click to browse
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    JPEG or PNG, max 5MB each ({3 - projectPhotos.length} remaining)
+                  </p>
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        Array.from(e.target.files).forEach((file) => uploadPhoto(file))
+                      }
+                      e.target.value = ''
+                    }}
+                  />
+                </div>
+              )}
+
+              {uploadingPhoto && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 mt-3">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading photo...
+                </div>
+              )}
+            </GlassCard>
+          </FadeIn>
+
+          {/* Action Buttons */}
+          <FadeIn delay={0.4}>
             <div className="flex items-center justify-between pt-6 border-t border-gray-200">
               <Button type="button" variant="outline" onClick={() => router.push('/applications')}>
                 Cancel

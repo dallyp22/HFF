@@ -478,19 +478,20 @@ export function AISummaryDisplay({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-purple-500" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
+            <Sparkles className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">No AI Analysis Yet</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">No Analysis Yet</h3>
           <p className="text-xs text-gray-500 mb-5 max-w-[200px] mx-auto">
-            Generate an AI-powered analysis to get insights about this application
+            Generate a supplementary analysis to get insights about this application
           </p>
           {isAdmin && (
             <Button
               onClick={handleRegenerate}
               disabled={regenerating}
               size="sm"
-              className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white gap-2 shadow-lg shadow-purple-500/25"
+              variant="outline"
+              className="gap-2"
             >
               <Sparkles className={`w-4 h-4 ${regenerating ? 'animate-pulse' : ''}`} />
               {regenerating ? 'Generating...' : 'Generate Analysis'}

@@ -8,13 +8,21 @@ export default function SignInPage() {
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
           <strong>Capital Requests:</strong> Capital Requests must go through the Foundation Director. Do not apply for a Capital Grant through this portal.
         </div>
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <Link
-            href="/sample-loi.pdf"
+            href="/documents/sample-loi.pdf"
             target="_blank"
             className="inline-flex items-center gap-2 text-sm font-medium text-[var(--hff-teal)] hover:underline"
           >
-            View Sample LOI (PDF)
+            Preview LOI Questions (PDF)
+          </Link>
+          <span className="mx-2 text-gray-300">|</span>
+          <Link
+            href="/documents/sample-application.pdf"
+            target="_blank"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--hff-teal)] hover:underline"
+          >
+            Preview Application Questions (PDF)
           </Link>
         </div>
       </div>

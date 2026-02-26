@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
-import { sendLOIApproved, sendLOIDeclined } from '@/lib/email'
 import { isReviewer as checkIsReviewer } from '@/lib/auth/access'
 
 // POST - Admin reviews LOI (approve or decline)
@@ -65,7 +64,7 @@ export async function POST(
     if (decision === 'APPROVED') {
       // Create the full application from LOI data
       const [updatedLoi, application] = await prisma.$transaction([
-        // Update LOI status
+        // Update LOI status - notification will be sent via batch release
         prisma.letterOfInterest.update({
           where: { id },
           data: {
@@ -75,6 +74,7 @@ export async function POST(
             reviewedAt: new Date(),
             reviewNotes: notes,
             decisionReason: reason,
+            notificationSent: false,
           },
         }),
         // Create the application with data from LOI
@@ -113,26 +113,13 @@ export async function POST(
         }),
       ])
 
-      // Send email notification to applicant about approval
-      const applicantEmail = loi.primaryContactEmail || loi.organization.users[0]?.email
-      if (applicantEmail) {
-        sendLOIApproved({
-          loiId: id,
-          applicationId: application.id,
-          projectTitle: loi.projectTitle || 'Your Project',
-          organizationName: loi.organization.legalName,
-          applicantEmail,
-          fullAppDeadline: loi.cycleConfig.fullAppDeadline?.toISOString(),
-        }).catch(err => console.error('Failed to send LOI approval email:', err))
-      }
-
       return NextResponse.json({
         loi: updatedLoi,
         application,
-        message: 'LOI approved. Full application created.',
+        message: 'LOI approved. Full application created. Notification will be sent when released.',
       })
     } else {
-      // DECLINED
+      // DECLINED - notification will be sent via batch release
       const [updatedLoi] = await prisma.$transaction([
         prisma.letterOfInterest.update({
           where: { id },
@@ -143,6 +130,7 @@ export async function POST(
             reviewedAt: new Date(),
             reviewNotes: notes,
             decisionReason: reason,
+            notificationSent: false,
           },
         }),
         prisma.lOIStatusHistory.create({
@@ -157,20 +145,9 @@ export async function POST(
         }),
       ])
 
-      // Send email notification to applicant about decline
-      const applicantEmail = loi.primaryContactEmail || loi.organization.users[0]?.email
-      if (applicantEmail) {
-        sendLOIDeclined({
-          projectTitle: loi.projectTitle || 'Your Project',
-          organizationName: loi.organization.legalName,
-          applicantEmail,
-          reason,
-        }).catch(err => console.error('Failed to send LOI decline email:', err))
-      }
-
       return NextResponse.json({
         loi: updatedLoi,
-        message: 'LOI declined.',
+        message: 'LOI declined. Notification will be sent when released.',
       })
     }
   } catch (error) {

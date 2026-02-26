@@ -79,9 +79,10 @@ export async function PATCH(
     }
 
     // String fields
-    const stringFields = ['projectTitle', 'projectDescription', 'projectGoals', 'targetPopulation', 
-      'geographicArea', 'povertyIndicators', 'schoolsServed', 'otherFundingSources', 
-      'previousHFFGrants', 'expectedOutcomes', 'measurementPlan', 'sustainabilityPlan']
+    const stringFields = ['projectTitle', 'projectDescription', 'projectGoals', 'targetPopulation',
+      'geographicArea', 'povertyIndicators', 'schoolsServed', 'otherFundingSources',
+      'previousHFFGrants', 'expectedOutcomes', 'measurementPlan', 'sustainabilityPlan',
+      'clientDemographicDescription']
     
     stringFields.forEach(field => {
       if (body[field] !== undefined && body[field] !== '') {
@@ -94,7 +95,20 @@ export async function PATCH(
     if (body.ageRangeStart) updateData.ageRangeStart = parseInt(body.ageRangeStart)
     if (body.ageRangeEnd) updateData.ageRangeEnd = parseInt(body.ageRangeEnd)
     if (body.beneficiariesCount) updateData.beneficiariesCount = parseInt(body.beneficiariesCount)
-    
+    if (body.childrenInPovertyImpacted) updateData.childrenInPovertyImpacted = parseInt(body.childrenInPovertyImpacted)
+    if (body.totalChildrenServedAnnually) updateData.totalChildrenServedAnnually = parseInt(body.totalChildrenServedAnnually)
+    // Auto-calculate poverty percentage
+    if (updateData.childrenInPovertyImpacted && updateData.totalChildrenServedAnnually) {
+      updateData.povertyPercentage = (updateData.childrenInPovertyImpacted / updateData.totalChildrenServedAnnually) * 100
+    }
+
+    // JSON fields
+    if (body.boardMembers !== undefined) {
+      updateData.boardMembers = typeof body.boardMembers === 'string'
+        ? JSON.parse(body.boardMembers)
+        : body.boardMembers
+    }
+
     // Decimal fields
     if (body.amountRequested) updateData.amountRequested = parseFloat(body.amountRequested)
     if (body.totalProjectBudget) updateData.totalProjectBudget = parseFloat(body.totalProjectBudget)

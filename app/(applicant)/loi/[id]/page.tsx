@@ -24,14 +24,15 @@ import {
   FileText,
   ArrowLeft,
   AlertCircle,
+  Printer,
 } from 'lucide-react'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'warning' | 'success' | 'error'; icon: any; color: string }> = {
   DRAFT: { label: 'Draft', variant: 'default', icon: FileText, color: 'gray' },
   SUBMITTED: { label: 'Submitted', variant: 'warning', icon: Send, color: 'amber' },
   UNDER_REVIEW: { label: 'Under Review', variant: 'warning', icon: Eye, color: 'blue' },
-  APPROVED: { label: 'Approved', variant: 'success', icon: CheckCircle2, color: 'green' },
-  DECLINED: { label: 'Declined', variant: 'error', icon: XCircle, color: 'red' },
+  APPROVED: { label: 'Award Consideration', variant: 'success', icon: CheckCircle2, color: 'green' },
+  DECLINED: { label: 'No Funding Consideration', variant: 'error', icon: XCircle, color: 'red' },
   WITHDRAWN: { label: 'Withdrawn', variant: 'default', icon: AlertCircle, color: 'gray' },
 }
 
@@ -127,9 +128,16 @@ export default function LOIDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="max-w-4xl mx-auto">
+        {/* Print-only Header */}
+        <div className="print-only print-header">
+          <h1>Heistand Family Foundation</h1>
+          <h2>Letter of Interest</h2>
+          <p>{loi.projectTitle || 'Untitled LOI'} — {loi.organization?.legalName}</p>
+        </div>
+
         {/* Back Button */}
         <FadeIn>
-          <Link href="/loi" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
+          <Link href="/loi" className="no-print inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
             <ArrowLeft className="w-4 h-4" />
             <span>Back to LOIs</span>
           </Link>
@@ -155,10 +163,21 @@ export default function LOIDetailPage() {
                   </div>
                 </div>
               </div>
-              <GlassBadge variant={status.variant} size="lg" className="flex-shrink-0">
-                <StatusIcon className="w-4 h-4 mr-1.5" />
-                {status.label}
-              </GlassBadge>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="no-print rounded-lg"
+                  onClick={() => window.print()}
+                >
+                  <Printer className="w-4 h-4" />
+                  Download PDF
+                </Button>
+                <GlassBadge variant={status.variant} size="lg">
+                  <StatusIcon className="w-4 h-4 mr-1.5" />
+                  {status.label}
+                </GlassBadge>
+              </div>
             </div>
           </div>
         </FadeIn>
@@ -166,23 +185,23 @@ export default function LOIDetailPage() {
         {/* Approved CTA */}
         {loi.status === 'APPROVED' && loi.application && (
           <FadeIn delay={0.1}>
-            <GlassCard variant="teal" className="p-5 mb-6">
+            <GlassCard className="p-6 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg shadow-green-100">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  <div className="w-14 h-14 rounded-2xl bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                    <CheckCircle2 className="w-7 h-7 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Congratulations!</p>
-                    <p className="text-sm text-gray-600">
-                      Your LOI has been approved. You can now complete your full grant application.
+                    <p className="text-lg font-bold text-green-900">Selected for Award Consideration</p>
+                    <p className="text-sm text-green-700">
+                      Your LOI has been selected. Complete your full grant application to continue the process.
                     </p>
                   </div>
                 </div>
                 <Link href={`/applications/${loi.application.id}/edit`}>
-                  <Button className="rounded-xl bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">
-                    Continue to Full Application
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                  <Button size="lg" className="rounded-xl bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20 text-base px-8">
+                    Go to Full Application
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
               </div>
@@ -199,9 +218,9 @@ export default function LOIDetailPage() {
                   <XCircle className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 mb-1">LOI Not Approved</p>
+                  <p className="font-semibold text-gray-900 mb-1">No Funding Consideration</p>
                   <p className="text-sm text-gray-600 mb-2">
-                    Unfortunately, your Letter of Interest was not selected for this cycle.
+                    Unfortunately, your Letter of Interest was not selected for funding consideration for this cycle.
                   </p>
                   {loi.decisionReason && (
                     <div className="mt-3 p-3 rounded-lg bg-white border border-red-100">

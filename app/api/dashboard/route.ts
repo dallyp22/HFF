@@ -21,6 +21,17 @@ export async function GET() {
               take: 10,
             },
             lois: {
+              where: {
+                OR: [
+                  // Always show DRAFT, SUBMITTED, UNDER_REVIEW, WITHDRAWN
+                  { status: { in: ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'WITHDRAWN'] } },
+                  // Only show APPROVED/DECLINED if notification has been released
+                  {
+                    status: { in: ['APPROVED', 'DECLINED'] },
+                    notificationSent: true,
+                  },
+                ],
+              },
               orderBy: { updatedAt: 'desc' },
               take: 10,
               include: {

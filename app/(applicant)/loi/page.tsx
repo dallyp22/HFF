@@ -52,8 +52,8 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
   DRAFT: { label: 'Draft', variant: 'default', icon: FileText },
   SUBMITTED: { label: 'Submitted', variant: 'warning', icon: Send },
   UNDER_REVIEW: { label: 'Under Review', variant: 'warning', icon: Eye },
-  APPROVED: { label: 'Approved', variant: 'success', icon: CheckCircle2 },
-  DECLINED: { label: 'Declined', variant: 'error', icon: XCircle },
+  APPROVED: { label: 'Award Consideration', variant: 'success', icon: CheckCircle2 },
+  DECLINED: { label: 'No Funding Consideration', variant: 'error', icon: XCircle },
   WITHDRAWN: { label: 'Withdrawn', variant: 'default', icon: AlertCircle },
 }
 
