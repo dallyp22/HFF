@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { InfoResponseForm } from '@/components/applicant/InfoResponseForm'
+import { printPage } from '@/lib/print'
 import {
   FileText,
   ArrowLeft,
@@ -156,7 +157,7 @@ export function ApplicationStatusClient({
                 variant="outline"
                 size="sm"
                 className="no-print rounded-lg"
-                onClick={() => window.print()}
+                onClick={() => printPage()}
               >
                 <Printer className="w-4 h-4" />
                 Download PDF

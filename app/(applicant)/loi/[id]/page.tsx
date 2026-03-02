@@ -9,6 +9,7 @@ import { FadeIn } from '@/components/motion/FadeIn'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { printPage } from '@/lib/print'
 import {
   Loader2,
   CheckCircle2,
@@ -168,7 +169,7 @@ export default function LOIDetailPage() {
                   variant="outline"
                   size="sm"
                   className="no-print rounded-lg"
-                  onClick={() => window.print()}
+                  onClick={() => printPage()}
                 >
                   <Printer className="w-4 h-4" />
                   Download PDF
