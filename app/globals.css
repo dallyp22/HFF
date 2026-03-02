@@ -407,7 +407,8 @@
   /* Clean up glass/card elements for print */
   .glass,
   .glass-teal,
-  .glass-elevated {
+  .glass-elevated,
+  [class*="backdrop-blur"] {
     background: white !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -416,11 +417,17 @@
   }
 
   /* Remove shadows and transparency from all cards */
-  [class*="shadow"],
-  [class*="backdrop-blur"] {
+  [class*="shadow"] {
     box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Force glass variable backgrounds to white */
+  [class*="bg-[var(--glass"] {
+    background: white !important;
+  }
+
+  [class*="bg-white/"] {
+    background: white !important;
   }
 
   /* Ensure text is readable */
@@ -472,10 +479,12 @@
     content: none;
   }
 
-  /* Remove animations */
+  /* Remove animations and force visibility (framer-motion uses inline styles) */
   *, *::before, *::after {
     animation-duration: 0s !important;
     transition-duration: 0s !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   /* Adjust container for print */
