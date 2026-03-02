@@ -154,8 +154,6 @@ ${org.missionStatement}
 - **Program Expenses:** $${org.form990ProgramExpenses?.toLocaleString() || 'Not specified'} (${programRatio}% of total)
 - **Admin Expenses:** $${org.form990AdminExpenses?.toLocaleString() || 'Not specified'}
 - **Fundraising Expenses:** $${org.form990FundraisingExpenses?.toLocaleString() || 'Not specified'}
-- **Employee Compensation & Benefits:** $${org.form990EmployeeCosts?.toLocaleString() || 'Not specified'}
-- **Salaries (Line 15):** $${org.form990Salaries?.toLocaleString() || 'Not specified'}
 
 ---
 

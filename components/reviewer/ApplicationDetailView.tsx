@@ -625,16 +625,12 @@ function OverviewTab({
         const programExpenses = application.organization.form990ProgramExpenses ? parseFloat(application.organization.form990ProgramExpenses.toString()) : 0
         const adminExpenses = application.organization.form990AdminExpenses ? parseFloat(application.organization.form990AdminExpenses.toString()) : 0
         const fundraisingExpenses = application.organization.form990FundraisingExpenses ? parseFloat(application.organization.form990FundraisingExpenses.toString()) : 0
-        const employeeCosts = application.organization.form990EmployeeCosts ? parseFloat(application.organization.form990EmployeeCosts.toString()) : 0
-        const salaries = application.organization.form990Salaries ? parseFloat(application.organization.form990Salaries.toString()) : 0
         const totalExpenses = application.organization.form990TotalExpenses
           ? parseFloat(application.organization.form990TotalExpenses.toString())
           : (programExpenses + adminExpenses + fundraisingExpenses)
         const programPct = totalExpenses > 0 ? (programExpenses / totalExpenses) * 100 : 0
         const adminPct = totalExpenses > 0 ? (adminExpenses / totalExpenses) * 100 : 0
         const fundraisingPct = totalExpenses > 0 ? (fundraisingExpenses / totalExpenses) * 100 : 0
-        const employeePct = totalExpenses > 0 ? (employeeCosts / totalExpenses) * 100 : 0
-        const salaryPct = totalExpenses > 0 ? (salaries / totalExpenses) * 100 : 0
 
         const programColor = programPct >= 75 ? 'text-emerald-700' : programPct >= 50 ? 'text-amber-700' : 'text-red-700'
         const programBg = programPct >= 75 ? 'from-emerald-50 to-green-50 border-emerald-200' : programPct >= 50 ? 'from-amber-50 to-yellow-50 border-amber-200' : 'from-red-50 to-rose-50 border-red-200'
@@ -675,33 +671,6 @@ function OverviewTab({
                 </p>
               </div>
             </div>
-
-            {/* Employee & Salary Breakout */}
-            <div className="grid sm:grid-cols-2 gap-4 mb-4">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200">
-                <p className="text-xs text-gray-500 mb-1">Employee Compensation & Benefits</p>
-                <p className="text-2xl font-bold text-blue-700">
-                  {employeeCosts > 0 ? `$${employeeCosts.toLocaleString()}` : '—'}
-                </p>
-                {employeeCosts > 0 && (
-                  <p className="text-sm font-semibold mt-1 text-blue-600">
-                    {employeePct.toFixed(1)}% of total expenses
-                  </p>
-                )}
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200">
-                <p className="text-xs text-gray-500 mb-1">Salaries <span className="text-gray-400">(Line 15)</span></p>
-                <p className="text-2xl font-bold text-teal-700">
-                  {salaries > 0 ? `$${salaries.toLocaleString()}` : '—'}
-                </p>
-                {salaries > 0 && (
-                  <p className="text-sm font-semibold mt-1 text-teal-600">
-                    {salaryPct.toFixed(1)}% of total expenses
-                  </p>
-                )}
-              </div>
-            </div>
-
             {/* Stacked bar chart */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs text-gray-500">

@@ -67,11 +67,6 @@ interface OrganizationDetailClientProps {
     form990TotalRevenue: number | null
     form990TotalExpenses: number | null
     form990NetAssets: number | null
-    form990ProgramExpenses: number | null
-    form990AdminExpenses: number | null
-    form990FundraisingExpenses: number | null
-    form990EmployeeCosts: number | null
-    form990Salaries: number | null
     programRatio: number | null
   }
   applications: {
@@ -327,114 +322,7 @@ export function OrganizationDetailClient({
                 </div>
               </div>
 
-              {/* Expense Ratio Breakdown */}
-              {(organization.form990ProgramExpenses || organization.form990AdminExpenses || organization.form990FundraisingExpenses) && (() => {
-                const programExp = organization.form990ProgramExpenses || 0
-                const adminExp = organization.form990AdminExpenses || 0
-                const fundraisingExp = organization.form990FundraisingExpenses || 0
-                const totalExp = organization.form990TotalExpenses || (programExp + adminExp + fundraisingExp)
-                const programPct = totalExp > 0 ? (programExp / totalExp) * 100 : 0
-                const adminPct = totalExp > 0 ? (adminExp / totalExp) * 100 : 0
-                const fundraisingPct = totalExp > 0 ? (fundraisingExp / totalExp) * 100 : 0
-                const programBarColor = programPct >= 75 ? 'bg-emerald-500' : programPct >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                const programColor = programPct >= 75 ? 'text-emerald-700' : programPct >= 50 ? 'text-amber-700' : 'text-red-700'
-
-                return (
-                  <>
-                    <div className="grid sm:grid-cols-3 gap-3 mb-4">
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200">
-                        <p className="text-xs text-gray-500 mb-0.5">Program Expenses</p>
-                        <p className={`text-lg font-bold ${programColor}`}>
-                          ${programExp.toLocaleString()}
-                        </p>
-                        <p className={`text-xs font-semibold ${programColor}`}>{programPct.toFixed(1)}%</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
-                        <p className="text-xs text-gray-500 mb-0.5">Admin Expenses</p>
-                        <p className="text-lg font-bold text-slate-700">
-                          ${adminExp.toLocaleString()}
-                        </p>
-                        <p className="text-xs font-semibold text-slate-600">{adminPct.toFixed(1)}%</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200">
-                        <p className="text-xs text-gray-500 mb-0.5">Fundraising Expenses</p>
-                        <p className="text-lg font-bold text-purple-700">
-                          ${fundraisingExp.toLocaleString()}
-                        </p>
-                        <p className="text-xs font-semibold text-purple-600">{fundraisingPct.toFixed(1)}%</p>
-                      </div>
-                    </div>
-
-                    {/* Employee Costs & Salaries */}
-                    {(organization.form990EmployeeCosts || organization.form990Salaries) && (
-                      <div className="grid sm:grid-cols-2 gap-3 mb-4">
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200">
-                          <p className="text-xs text-gray-500 mb-0.5">Employee Compensation & Benefits</p>
-                          <p className="text-lg font-bold text-blue-700">
-                            {organization.form990EmployeeCosts
-                              ? `$${organization.form990EmployeeCosts.toLocaleString()}`
-                              : '—'}
-                          </p>
-                          {organization.form990EmployeeCosts && totalExp > 0 && (
-                            <p className="text-xs font-semibold text-blue-600">
-                              {((organization.form990EmployeeCosts / totalExp) * 100).toFixed(1)}% of total expenses
-                            </p>
-                          )}
-                        </div>
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200">
-                          <p className="text-xs text-gray-500 mb-0.5">Salaries <span className="text-gray-400">(Line 15)</span></p>
-                          <p className="text-lg font-bold text-teal-700">
-                            {organization.form990Salaries
-                              ? `$${organization.form990Salaries.toLocaleString()}`
-                              : '—'}
-                          </p>
-                          {organization.form990Salaries && totalExp > 0 && (
-                            <p className="text-xs font-semibold text-teal-600">
-                              {((organization.form990Salaries / totalExp) * 100).toFixed(1)}% of total expenses
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Expense Distribution Bar */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>Expense Distribution</span>
-                        <span>Total: ${totalExp.toLocaleString()}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex">
-                        {programPct > 0 && (
-                          <div className={`h-full ${programBarColor}`} style={{ width: `${programPct}%` }} title={`Program: ${programPct.toFixed(1)}%`} />
-                        )}
-                        {adminPct > 0 && (
-                          <div className="h-full bg-slate-400" style={{ width: `${adminPct}%` }} title={`Admin: ${adminPct.toFixed(1)}%`} />
-                        )}
-                        {fundraisingPct > 0 && (
-                          <div className="h-full bg-purple-400" style={{ width: `${fundraisingPct}%` }} title={`Fundraising: ${fundraisingPct.toFixed(1)}%`} />
-                        )}
-                      </div>
-                      <div className="flex gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1.5">
-                          <span className={`w-2.5 h-2.5 rounded-full ${programBarColor}`} />
-                          Program
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                          Admin
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                          Fundraising
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )
-              })()}
-
-              {/* Program Expense Ratio (fallback if no breakout data) */}
-              {!(organization.form990ProgramExpenses || organization.form990AdminExpenses || organization.form990FundraisingExpenses) && organization.programRatio && (
+              {organization.programRatio && (
                 <div className="p-4 rounded-xl bg-gradient-to-r from-[var(--hff-teal)]/5 to-[var(--hff-teal)]/10 border border-[var(--hff-teal)]/20">
                   <div className="flex items-center justify-between">
                     <div>

@@ -56,8 +56,6 @@ interface Organization {
   form990TotalRevenue: number | null
   form990TotalExpenses: number | null
   form990NetAssets: number | null
-  form990EmployeeCosts: number | null
-  form990Salaries: number | null
   fullTimeStaff: number | null
   partTimeStaff: number | null
   volunteers: number | null
@@ -233,8 +231,6 @@ export default function ProfileReviewPage() {
         { label: '990 Total Revenue', value: formatCurrency(org.form990TotalRevenue) },
         { label: '990 Total Expenses', value: formatCurrency(org.form990TotalExpenses) },
         { label: '990 Net Assets', value: formatCurrency(org.form990NetAssets) },
-        { label: '990 Employee Compensation', value: formatCurrency(org.form990EmployeeCosts) },
-        { label: '990 Salaries (Line 15)', value: formatCurrency(org.form990Salaries) },
       ].filter((item) => item.value),
     },
     {
