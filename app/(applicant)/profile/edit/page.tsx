@@ -77,6 +77,12 @@ export default function ProfileEditPage() {
               form990FundraisingExpenses: org.form990FundraisingExpenses
                 ? parseFloat(org.form990FundraisingExpenses)
                 : undefined,
+              form990EmployeeCosts: org.form990EmployeeCosts
+                ? parseFloat(org.form990EmployeeCosts)
+                : undefined,
+              form990Salaries: org.form990Salaries
+                ? parseFloat(org.form990Salaries)
+                : undefined,
             }
             form.reset(formattedData)
           }
@@ -772,14 +778,36 @@ export default function ProfileEditPage() {
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="form990FundraisingExpenses">Fundraising Expenses</Label>
                   <Input
                     id="form990FundraisingExpenses"
                     type="number"
                     {...form.register('form990FundraisingExpenses')}
                     placeholder="76800"
-                    className="bg-white/50 md:max-w-[calc(50%-0.5rem)]"
+                    className="bg-white/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="form990EmployeeCosts">Employee Compensation & Benefits</Label>
+                  <Input
+                    id="form990EmployeeCosts"
+                    type="number"
+                    {...form.register('form990EmployeeCosts')}
+                    placeholder="200000"
+                    className="bg-white/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="form990Salaries">Salaries (Line 15)</Label>
+                  <Input
+                    id="form990Salaries"
+                    type="number"
+                    {...form.register('form990Salaries')}
+                    placeholder="180000"
+                    className="bg-white/50"
                   />
                 </div>
               </div>

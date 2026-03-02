@@ -169,6 +169,8 @@ model Organization {
   form990ProgramExpenses Decimal? @db.Decimal(12, 2)
   form990AdminExpenses  Decimal? @db.Decimal(12, 2)
   form990FundraisingExpenses Decimal? @db.Decimal(12, 2)
+  form990EmployeeCosts  Decimal? @db.Decimal(12, 2)  // Total employee compensation & benefits
+  form990Salaries       Decimal? @db.Decimal(12, 2)  // Line 15: Salaries, other compensation, employee benefits
   
   // Profile Review Per Cycle
   profileLastReviewedAt       DateTime?

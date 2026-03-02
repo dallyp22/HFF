@@ -58,6 +58,8 @@ export const organizationProfileSchema = z.object({
   form990ProgramExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
   form990AdminExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
   form990FundraisingExpenses: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
+  form990EmployeeCosts: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
+  form990Salaries: z.preprocess((val) => val === '' ? undefined : Number(val), z.number().min(0).optional()),
 })
 
 export type OrganizationProfileFormData = z.infer<typeof organizationProfileSchema>

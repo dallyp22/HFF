@@ -64,6 +64,21 @@ export default async function OrganizationDetailPage({
         form990NetAssets: organization.form990NetAssets
           ? parseFloat(organization.form990NetAssets.toString())
           : null,
+        form990ProgramExpenses: organization.form990ProgramExpenses
+          ? parseFloat(organization.form990ProgramExpenses.toString())
+          : null,
+        form990AdminExpenses: organization.form990AdminExpenses
+          ? parseFloat(organization.form990AdminExpenses.toString())
+          : null,
+        form990FundraisingExpenses: organization.form990FundraisingExpenses
+          ? parseFloat(organization.form990FundraisingExpenses.toString())
+          : null,
+        form990EmployeeCosts: organization.form990EmployeeCosts
+          ? parseFloat(organization.form990EmployeeCosts.toString())
+          : null,
+        form990Salaries: organization.form990Salaries
+          ? parseFloat(organization.form990Salaries.toString())
+          : null,
         programRatio: programRatio ? parseFloat(programRatio) : null,
       }}
       applications={organization.applications.map((app: any) => ({
