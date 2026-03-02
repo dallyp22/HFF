@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { InfoResponseForm } from '@/components/applicant/InfoResponseForm'
-import { printPage } from '@/lib/print'
+import { toast } from 'sonner'
 import {
   FileText,
   ArrowLeft,
@@ -157,7 +157,21 @@ export function ApplicationStatusClient({
                 variant="outline"
                 size="sm"
                 className="no-print rounded-lg"
-                onClick={() => printPage()}
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/applications/${application.id}/pdf`)
+                    if (!res.ok) throw new Error('Failed to generate PDF')
+                    const blob = await res.blob()
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'Application.pdf'
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  } catch {
+                    toast.error('Failed to download PDF')
+                  }
+                }}
               >
                 <Printer className="w-4 h-4" />
                 Download PDF
