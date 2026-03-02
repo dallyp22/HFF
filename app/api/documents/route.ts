@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     // Validate file type
     if (!validateFileType(file)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Only PDF, Word, and Excel files are allowed.' },
+        { error: 'Invalid file type. Allowed: PDF, Word, Excel, JPEG, and PNG.' },
         { status: 400 }
       )
     }

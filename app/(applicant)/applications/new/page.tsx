@@ -29,6 +29,14 @@ import {
   Sparkles,
   Clock,
   Building2,
+  Camera,
+  Upload,
+  X,
+  Image as ImageIcon,
+  FileSpreadsheet,
+  Trash2,
+  Download,
+  Paperclip,
 } from 'lucide-react'
 
 interface FormData {
@@ -88,6 +96,13 @@ const steps = [
     icon: Target,
     fields: ['expectedOutcomes', 'measurementPlan', 'sustainabilityPlan'],
   },
+  {
+    id: 6,
+    title: 'Attachments',
+    description: 'Photos & budget',
+    icon: Paperclip,
+    fields: [],
+  },
 ]
 
 export default function NewApplicationPage() {
@@ -100,6 +115,13 @@ export default function NewApplicationPage() {
   const [organization, setOrganization] = useState<any>(null)
   const [currentStep, setCurrentStep] = useState(1)
   const [direction, setDirection] = useState(0)
+
+  // Attachment state
+  const [projectPhotos, setProjectPhotos] = useState<any[]>([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoDragActive, setPhotoDragActive] = useState(false)
+  const [projectBudget, setProjectBudget] = useState<any>(null)
+  const [uploadingBudget, setUploadingBudget] = useState(false)
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -130,8 +152,10 @@ export default function NewApplicationPage() {
   // Calculate step completion
   const getStepCompletion = useCallback(
     (stepId: number) => {
+      // Attachments step - optional, always counts as complete
+      if (stepId === 6) return 100
       const step = steps.find((s) => s.id === stepId)
-      if (!step) return 0
+      if (!step || step.fields.length === 0) return 100
       const filledFields = step.fields.filter((field) => {
         const value = watchedValues[field as keyof FormData]
         return value && value.toString().trim().length > 0
@@ -253,6 +277,127 @@ export default function NewApplicationPage() {
       toast.error('Failed to submit application')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // Photo upload handlers
+  function handlePhotoDrag(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') setPhotoDragActive(true)
+    else setPhotoDragActive(false)
+  }
+
+  function handlePhotoDrop(e: React.DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setPhotoDragActive(false)
+    if (e.dataTransfer.files)
+      Array.from(e.dataTransfer.files).forEach((file) => uploadPhoto(file))
+  }
+
+  async function uploadPhoto(file: File) {
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast.error('Only JPEG and PNG images are accepted.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Each photo must be under 5MB.')
+      return
+    }
+    if (projectPhotos.length >= 3) {
+      toast.error('Maximum 3 photos allowed.')
+      return
+    }
+    setUploadingPhoto(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'PROJECT_PHOTO')
+      formData.append('name', file.name.replace(/\.[^/.]+$/, ''))
+      formData.append('scope', 'APPLICATION')
+      formData.append('applicationId', applicationId!)
+      const response = await fetch('/api/documents', { method: 'POST', body: formData })
+      if (response.ok) {
+        const doc = await response.json()
+        setProjectPhotos((prev) => [...prev, doc])
+        toast.success('Photo uploaded successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload photo')
+      }
+    } catch {
+      toast.error('Failed to upload photo')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  async function deletePhoto(docId: string) {
+    try {
+      const response = await fetch(`/api/documents/${docId}`, { method: 'DELETE' })
+      if (response.ok) {
+        setProjectPhotos((prev) => prev.filter((p) => p.id !== docId))
+        toast.success('Photo deleted')
+      } else {
+        toast.error('Failed to delete photo')
+      }
+    } catch {
+      toast.error('Failed to delete photo')
+    }
+  }
+
+  // Budget upload handler
+  async function uploadBudget(file: File) {
+    const allowed = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ]
+    if (!allowed.includes(file.type)) {
+      toast.error('Only PDF, XLS, and XLSX files are accepted.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File must be under 10MB.')
+      return
+    }
+    setUploadingBudget(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'PROJECT_BUDGET')
+      formData.append('name', file.name.replace(/\.[^/.]+$/, ''))
+      formData.append('scope', 'APPLICATION')
+      formData.append('applicationId', applicationId!)
+      const response = await fetch('/api/documents', { method: 'POST', body: formData })
+      if (response.ok) {
+        const doc = await response.json()
+        setProjectBudget(doc)
+        toast.success('Budget uploaded successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload budget')
+      }
+    } catch {
+      toast.error('Failed to upload budget')
+    } finally {
+      setUploadingBudget(false)
+    }
+  }
+
+  async function deleteBudget() {
+    if (!projectBudget) return
+    try {
+      const response = await fetch(`/api/documents/${projectBudget.id}`, { method: 'DELETE' })
+      if (response.ok) {
+        setProjectBudget(null)
+        toast.success('Budget deleted')
+      } else {
+        toast.error('Failed to delete budget')
+      }
+    } catch {
+      toast.error('Failed to delete budget')
     }
   }
 
@@ -741,6 +886,172 @@ export default function NewApplicationPage() {
                         rows={4}
                         className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
                       />
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 6: Attachments */}
+                {currentStep === 6 && (
+                  <div className="space-y-8">
+                    {/* Project Photos */}
+                    <div>
+                      <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-1">
+                        <Camera className="w-4 h-4 text-[var(--hff-teal)]" />
+                        Project Photos
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Upload up to 3 photos of your project (JPEG or PNG, max 5MB each).
+                      </p>
+
+                      {projectPhotos.length > 0 && (
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          {projectPhotos.map((photo) => (
+                            <div key={photo.id} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-square bg-gray-100">
+                              <img
+                                src={photo.storageUrl}
+                                alt={photo.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-white hover:text-red-300 hover:bg-transparent"
+                                  onClick={() => deletePhoto(photo.id)}
+                                >
+                                  <X className="h-5 w-5" />
+                                </Button>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                <p className="text-xs text-white truncate">{photo.fileName}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {projectPhotos.length < 3 && (
+                        <div
+                          onDragEnter={handlePhotoDrag}
+                          onDragLeave={handlePhotoDrag}
+                          onDragOver={handlePhotoDrag}
+                          onDrop={handlePhotoDrop}
+                          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                            photoDragActive
+                              ? 'border-[var(--hff-teal)] bg-[var(--hff-teal)]/5 scale-[1.01]'
+                              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50/50'
+                          }`}
+                          onClick={() => document.getElementById('photo-upload-new')?.click()}
+                        >
+                          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gray-100 flex items-center justify-center">
+                            <ImageIcon className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 mb-1">
+                            Drop photos here or click to browse
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            JPEG or PNG, max 5MB each ({3 - projectPhotos.length} remaining)
+                          </p>
+                          <input
+                            id="photo-upload-new"
+                            type="file"
+                            accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files)
+                                Array.from(e.target.files).forEach((file) => uploadPhoto(file))
+                              e.target.value = ''
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {uploadingPhoto && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-3">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading photo...
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-100" />
+
+                    {/* Project Budget */}
+                    <div>
+                      <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-1">
+                        <FileSpreadsheet className="w-4 h-4 text-[var(--hff-teal)]" />
+                        Project Budget
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Upload a project budget spreadsheet (PDF, XLS, or XLSX, max 10MB).
+                      </p>
+
+                      {projectBudget ? (
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-200">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2 rounded-lg bg-[var(--hff-teal)]/10">
+                              <FileSpreadsheet className="h-5 w-5 text-[var(--hff-teal)]" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{projectBudget.fileName}</p>
+                              <p className="text-xs text-gray-500">
+                                {(projectBudget.fileSize / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-gray-400 hover:text-red-500"
+                            onClick={deleteBudget}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer border-gray-300 hover:border-gray-400 hover:bg-gray-50/50 transition-all"
+                          onClick={() => document.getElementById('budget-upload-new')?.click()}
+                        >
+                          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gray-100 flex items-center justify-center">
+                            <Upload className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 mb-1">
+                            Click to upload your project budget
+                          </p>
+                          <p className="text-xs text-gray-500">PDF, XLS, or XLSX, max 10MB</p>
+                          <input
+                            id="budget-upload-new"
+                            type="file"
+                            accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) uploadBudget(e.target.files[0])
+                              e.target.value = ''
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {uploadingBudget && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-3">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading budget...
+                        </div>
+                      )}
+
+                      <a
+                        href="/documents/hff-budget-template.xlsx"
+                        download
+                        className="inline-flex items-center gap-1.5 text-sm text-[var(--hff-teal)] hover:underline mt-3"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download HFF Budget Template
+                      </a>
                     </div>
                   </div>
                 )}
