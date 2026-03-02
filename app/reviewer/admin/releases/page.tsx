@@ -8,9 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
 import {
-  ArrowLeft,
   Send,
   CheckCircle2,
   XCircle,
@@ -206,14 +204,6 @@ export default function ReleasesPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <FadeIn>
-          <Link
-            href="/reviewer/admin"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Admin
-          </Link>
-
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-[var(--hff-teal)]/10">

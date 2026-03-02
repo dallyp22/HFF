@@ -10,13 +10,12 @@ import {
   AlertTriangle,
   Trash2,
   Database,
-  ArrowLeft,
+
   Shield,
   Building2,
   FileText,
   Loader2,
 } from 'lucide-react'
-import Link from 'next/link'
 
 export default function ResetDataPage() {
   const [deleting, setDeleting] = useState(false)
@@ -49,14 +48,6 @@ export default function ResetDataPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <FadeIn>
-          <Link
-            href="/reviewer/admin"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Admin
-          </Link>
-
           <div className="flex items-center gap-3 mb-8">
             <div className="p-2.5 rounded-xl bg-red-100">
               <Database className="w-6 h-6 text-red-600" />

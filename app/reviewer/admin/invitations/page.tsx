@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { FadeIn } from '@/components/motion/FadeIn'
 import {
   Link as LinkIcon,
-  ArrowLeft,
+
   Copy,
   Check,
   Mail,
@@ -81,13 +81,6 @@ export default function InvitationsPage() {
         {/* Header */}
         <FadeIn>
           <div className="mb-8">
-            <Link
-              href="/reviewer/admin"
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-4"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Admin
-            </Link>
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-blue-600/10">
                 <LinkIcon className="w-6 h-6 text-blue-600" />

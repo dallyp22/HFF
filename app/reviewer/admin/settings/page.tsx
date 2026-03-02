@@ -19,7 +19,7 @@ import {
   Facebook,
   Twitter,
   Linkedin,
-  ArrowLeft,
+
   ExternalLink,
   Sparkles,
   Brain,
@@ -116,14 +116,6 @@ export default function FoundationSettingsPage() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <FadeIn>
-          <Link
-            href="/reviewer/admin"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[var(--hff-teal)] transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Admin
-          </Link>
-
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-[var(--hff-slate)]/10">
