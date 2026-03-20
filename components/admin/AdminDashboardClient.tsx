@@ -20,6 +20,7 @@ import {
   Clock,
   Activity,
   ChevronRight,
+  Pencil,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -68,6 +69,13 @@ const quickActions = [
     href: '/reviewer/organizations',
     icon: Building2,
     color: 'bg-[var(--hff-sage)]',
+  },
+  {
+    title: 'Edit Forms',
+    description: 'Customize LOI & Application questions',
+    href: '/reviewer/admin/forms',
+    icon: Pencil,
+    color: 'bg-orange-600',
   },
   {
     title: 'Foundation Settings',

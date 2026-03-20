@@ -592,6 +592,15 @@ model EmailTemplate {
   updatedAt             DateTime @updatedAt
 }
 
+model FormConfig {
+  id                    String   @id @default(cuid())
+  formType              String   @unique // "LOI" or "APPLICATION"
+  config                Json     // Full form configuration (steps, fields, labels, etc.)
+  updatedAt             DateTime @updatedAt
+  updatedById           String?
+  updatedByName         String?
+}
+
 model AuditLog {
   id                    String   @id @default(cuid())
   userId                String?  // Clerk user ID

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { GlassCard } from '@/components/glass/GlassCard'
@@ -42,6 +42,8 @@ import {
   HelpCircle,
   ImageIcon,
 } from 'lucide-react'
+import { useFormConfig } from '@/lib/hooks/useFormConfig'
+import type { FormFieldConfig, FormStepConfig } from '@/lib/default-form-configs'
 
 interface FormData {
   // Contact Info
@@ -68,7 +70,7 @@ interface FormData {
   budgetOutline: string
 }
 
-const steps = [
+const defaultSteps = [
   {
     id: 1,
     title: 'Contact Information',
@@ -113,22 +115,63 @@ const steps = [
   },
 ]
 
-const expenditureOptions = [
+const stepIcons = [User, Target, HelpCircle, FileText, DollarSign, Send]
+
+const defaultExpenditureOptions = [
   { value: 'PROGRAMMING', label: 'Programming / Special Project' },
   { value: 'OPERATING', label: 'Operating Funding' },
   { value: 'CAPITAL', label: 'Capital Project', note: 'Requires pre-approval' },
 ]
 
-const focusAreaOptions = [
+const defaultFocusAreaOptions = [
   { value: 'HUMAN_HEALTH', label: 'Human Health & Wellbeing' },
   { value: 'EDUCATION', label: 'Education & Development' },
   { value: 'COMMUNITY_WELLBEING', label: 'Community Wellbeing' },
 ]
 
+// Helper to get a field config from the loaded form config
+function getField(formConfig: FormStepConfig[] | undefined, stepId: number, fieldKey: string): FormFieldConfig | undefined {
+  if (!formConfig) return undefined
+  const step = formConfig.find((s) => s.id === stepId)
+  return step?.fields.find((f) => f.key === fieldKey)
+}
+
 export default function EditLOIPage() {
   const router = useRouter()
   const params = useParams()
   const loiId = params.id as string
+  const { config: formConfig } = useFormConfig('LOI')
+
+  // Build steps from config, falling back to defaults
+  const steps = useMemo(() => {
+    if (!formConfig?.steps) return defaultSteps
+    return formConfig.steps.map((cfgStep, i) => {
+      const def = defaultSteps.find((d) => d.id === cfgStep.id) || defaultSteps[i]
+      return {
+        id: cfgStep.id,
+        title: cfgStep.title || def?.title || `Step ${cfgStep.id}`,
+        description: cfgStep.description || def?.description || '',
+        icon: stepIcons[i] || FileText,
+        fields: cfgStep.fields.filter((f) => f.visible).map((f) => f.key),
+      }
+    })
+  }, [formConfig])
+
+  // Config-driven options
+  const expenditureOptions = useMemo(() => {
+    const field = getField(formConfig?.steps, 2, 'expenditureType')
+    return field?.options || defaultExpenditureOptions
+  }, [formConfig])
+
+  const focusAreaOptions = useMemo(() => {
+    const field = getField(formConfig?.steps, 2, 'focusArea')
+    return field?.options || defaultFocusAreaOptions
+  }, [formConfig])
+
+  // Helper to get field config with fallback
+  const fc = useCallback((stepId: number, key: string) => {
+    return getField(formConfig?.steps, stepId, key)
+  }, [formConfig])
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -527,76 +570,87 @@ export default function EditLOIPage() {
                 {currentStep === 1 && (
                   <div className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="primaryContactName" className="text-sm font-medium text-gray-700">
-                          Primary Contact Name <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="primaryContactName"
-                          {...register('primaryContactName')}
-                          placeholder="Full name"
-                          className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="primaryContactTitle" className="text-sm font-medium text-gray-700">
-                          Title
-                        </Label>
-                        <Input
-                          id="primaryContactTitle"
-                          {...register('primaryContactTitle')}
-                          placeholder="e.g., Executive Director"
-                          className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                        />
-                      </div>
+                      {fc(1, 'primaryContactName')?.visible !== false && (
+                        <div className="space-y-2">
+                          <Label htmlFor="primaryContactName" className="text-sm font-medium text-gray-700">
+                            {fc(1, 'primaryContactName')?.label || 'Primary Contact Name'} {(fc(1, 'primaryContactName')?.required ?? true) && <span className="text-red-500">*</span>}
+                          </Label>
+                          <Input
+                            id="primaryContactName"
+                            {...register('primaryContactName')}
+                            placeholder={fc(1, 'primaryContactName')?.placeholder || 'Full name'}
+                            className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                          />
+                          {fc(1, 'primaryContactName')?.helpText && <p className="text-xs text-gray-500">{fc(1, 'primaryContactName')?.helpText}</p>}
+                        </div>
+                      )}
+                      {fc(1, 'primaryContactTitle')?.visible !== false && (
+                        <div className="space-y-2">
+                          <Label htmlFor="primaryContactTitle" className="text-sm font-medium text-gray-700">
+                            {fc(1, 'primaryContactTitle')?.label || 'Title'} {fc(1, 'primaryContactTitle')?.required && <span className="text-red-500">*</span>}
+                          </Label>
+                          <Input
+                            id="primaryContactTitle"
+                            {...register('primaryContactTitle')}
+                            placeholder={fc(1, 'primaryContactTitle')?.placeholder || 'e.g., Executive Director'}
+                            className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="primaryContactEmail" className="text-sm font-medium text-gray-700">
-                          Email <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="primaryContactEmail"
-                          type="email"
-                          {...register('primaryContactEmail')}
-                          placeholder="email@organization.org"
-                          className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="primaryContactPhone" className="text-sm font-medium text-gray-700">
-                          Phone
-                        </Label>
-                        <Input
-                          id="primaryContactPhone"
-                          {...register('primaryContactPhone')}
-                          placeholder="(555) 123-4567"
-                          className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                        />
-                      </div>
+                      {fc(1, 'primaryContactEmail')?.visible !== false && (
+                        <div className="space-y-2">
+                          <Label htmlFor="primaryContactEmail" className="text-sm font-medium text-gray-700">
+                            {fc(1, 'primaryContactEmail')?.label || 'Email'} {(fc(1, 'primaryContactEmail')?.required ?? true) && <span className="text-red-500">*</span>}
+                          </Label>
+                          <Input
+                            id="primaryContactEmail"
+                            type="email"
+                            {...register('primaryContactEmail')}
+                            placeholder={fc(1, 'primaryContactEmail')?.placeholder || 'email@organization.org'}
+                            className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                          />
+                        </div>
+                      )}
+                      {fc(1, 'primaryContactPhone')?.visible !== false && (
+                        <div className="space-y-2">
+                          <Label htmlFor="primaryContactPhone" className="text-sm font-medium text-gray-700">
+                            {fc(1, 'primaryContactPhone')?.label || 'Phone'} {fc(1, 'primaryContactPhone')?.required && <span className="text-red-500">*</span>}
+                          </Label>
+                          <Input
+                            id="primaryContactPhone"
+                            {...register('primaryContactPhone')}
+                            placeholder={fc(1, 'primaryContactPhone')?.placeholder || '(555) 123-4567'}
+                            className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                          />
+                        </div>
+                      )}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="executiveDirector" className="text-sm font-medium text-gray-700">
-                        Executive Director
-                      </Label>
-                      <Input
-                        id="executiveDirector"
-                        {...register('executiveDirector')}
-                        placeholder="Executive Director name"
-                        className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                      />
-                    </div>
+                    {fc(1, 'executiveDirector')?.visible !== false && (
+                      <div className="space-y-2">
+                        <Label htmlFor="executiveDirector" className="text-sm font-medium text-gray-700">
+                          {fc(1, 'executiveDirector')?.label || 'Executive Director'} {fc(1, 'executiveDirector')?.required && <span className="text-red-500">*</span>}
+                        </Label>
+                        <Input
+                          id="executiveDirector"
+                          {...register('executiveDirector')}
+                          placeholder={fc(1, 'executiveDirector')?.placeholder || 'Executive Director name'}
+                          className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Step 2: Expenditure Type */}
                 {currentStep === 2 && (
                   <div className="space-y-8">
-                    <div className="space-y-4">
+                    {fc(2, 'expenditureType')?.visible !== false && <div className="space-y-4">
                       <Label className="text-sm font-medium text-gray-700">
-                        Expenditure Type <span className="text-red-500">*</span>
+                        {fc(2, 'expenditureType')?.label || 'Expenditure Type'} {(fc(2, 'expenditureType')?.required ?? true) && <span className="text-red-500">*</span>}
                       </Label>
                       <div className="grid gap-3">
                         {expenditureOptions.map((option) => (
@@ -636,11 +690,11 @@ export default function EditLOIPage() {
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </div>}
 
-                    <div className="space-y-4">
+                    {fc(2, 'focusArea')?.visible !== false && <div className="space-y-4">
                       <Label className="text-sm font-medium text-gray-700">
-                        Focus Area <span className="text-red-500">*</span>
+                        {fc(2, 'focusArea')?.label || 'Focus Area'} {(fc(2, 'focusArea')?.required ?? true) && <span className="text-red-500">*</span>}
                       </Label>
                       <div className="grid gap-3">
                         {focusAreaOptions.map((option) => (
@@ -677,16 +731,16 @@ export default function EditLOIPage() {
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </div>}
                   </div>
                 )}
 
                 {/* Step 3: Project Context */}
                 {currentStep === 3 && (
                   <div className="space-y-8">
-                    <div className="space-y-4">
+                    {fc(3, 'isNewProject')?.visible !== false && <div className="space-y-4">
                       <Label className="text-sm font-medium text-gray-700">
-                        Is this request for a new project or emerging need?
+                        {fc(3, 'isNewProject')?.label || 'Is this request for a new project or emerging need?'}
                       </Label>
                       <div className="flex gap-4">
                         {['yes', 'no'].map((value) => (
@@ -709,19 +763,19 @@ export default function EditLOIPage() {
                           </label>
                         ))}
                       </div>
-                      {watchedValues.isNewProject === 'yes' && (
+                      {watchedValues.isNewProject === 'yes' && fc(3, 'newProjectExplanation')?.visible !== false && (
                         <Textarea
                           {...register('newProjectExplanation')}
-                          placeholder="Please explain..."
+                          placeholder={fc(3, 'newProjectExplanation')?.placeholder || 'Please explain...'}
                           rows={3}
                           className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
                         />
                       )}
-                    </div>
+                    </div>}
 
-                    <div className="space-y-4">
+                    {fc(3, 'isCapacityIncrease')?.visible !== false && <div className="space-y-4">
                       <Label className="text-sm font-medium text-gray-700">
-                        Is this request for increasing capacity or rising operations costs?
+                        {fc(3, 'isCapacityIncrease')?.label || 'Is this request for increasing capacity or rising operations costs?'}
                       </Label>
                       <div className="flex gap-4">
                         {['yes', 'no'].map((value) => (
@@ -744,91 +798,101 @@ export default function EditLOIPage() {
                           </label>
                         ))}
                       </div>
-                      {watchedValues.isCapacityIncrease === 'yes' && (
+                      {watchedValues.isCapacityIncrease === 'yes' && fc(3, 'capacityExplanation')?.visible !== false && (
                         <Textarea
                           {...register('capacityExplanation')}
-                          placeholder="Please explain..."
+                          placeholder={fc(3, 'capacityExplanation')?.placeholder || 'Please explain...'}
                           rows={3}
                           className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
                         />
                       )}
-                    </div>
+                    </div>}
                   </div>
                 )}
 
                 {/* Step 4: Project Overview */}
                 {currentStep === 4 && (
                   <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="projectTitle" className="text-sm font-medium text-gray-700">
-                        Project Title <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="projectTitle"
-                        {...register('projectTitle')}
-                        placeholder="e.g., Youth Literacy Initiative 2026"
-                        className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="projectDescription" className="text-sm font-medium text-gray-700">
-                          Proposed Project Description <span className="text-red-500">*</span>
+                    {fc(4, 'projectTitle')?.visible !== false && (
+                      <div className="space-y-2">
+                        <Label htmlFor="projectTitle" className="text-sm font-medium text-gray-700">
+                          {fc(4, 'projectTitle')?.label || 'Project Title'} {(fc(4, 'projectTitle')?.required ?? true) && <span className="text-red-500">*</span>}
                         </Label>
-                        <span className={cn(
-                          'text-xs',
-                          descriptionWordCount > 500 ? 'text-red-600 font-medium' : 'text-gray-500'
-                        )}>
-                          {descriptionWordCount}/500 words
-                        </span>
+                        <Input
+                          id="projectTitle"
+                          {...register('projectTitle')}
+                          placeholder={fc(4, 'projectTitle')?.placeholder || 'e.g., Youth Literacy Initiative 2026'}
+                          className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                        />
                       </div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Describe your project in detail. Photos can help tell your story (attach 1-3 jpgs).
-                      </p>
-                      <Textarea
-                        id="projectDescription"
-                        {...register('projectDescription')}
-                        placeholder="Describe your proposed project, including what you hope to accomplish and how it aligns with the Heistand Family Foundation's mission..."
-                        rows={8}
-                        className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                      />
-                      {descriptionWordCount > 500 && (
-                        <p className="text-xs text-red-600">
-                          Please reduce your description to 500 words or fewer
-                        </p>
-                      )}
-                    </div>
+                    )}
+
+                    {fc(4, 'projectDescription')?.visible !== false && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="projectDescription" className="text-sm font-medium text-gray-700">
+                            {fc(4, 'projectDescription')?.label || 'Proposed Project Description'} {(fc(4, 'projectDescription')?.required ?? true) && <span className="text-red-500">*</span>}
+                          </Label>
+                          {(fc(4, 'projectDescription')?.wordLimit ?? 500) > 0 && (
+                            <span className={cn(
+                              'text-xs',
+                              descriptionWordCount > (fc(4, 'projectDescription')?.wordLimit ?? 500) ? 'text-red-600 font-medium' : 'text-gray-500'
+                            )}>
+                              {descriptionWordCount}/{fc(4, 'projectDescription')?.wordLimit ?? 500} words
+                            </span>
+                          )}
+                        </div>
+                        {(fc(4, 'projectDescription')?.helpText) && (
+                          <p className="text-xs text-gray-500 mb-1">{fc(4, 'projectDescription')?.helpText}</p>
+                        )}
+                        <Textarea
+                          id="projectDescription"
+                          {...register('projectDescription')}
+                          placeholder={fc(4, 'projectDescription')?.placeholder || "Describe your proposed project..."}
+                          rows={8}
+                          className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                        />
+                        {descriptionWordCount > (fc(4, 'projectDescription')?.wordLimit ?? 500) && (
+                          <p className="text-xs text-red-600">
+                            Please reduce your description to {fc(4, 'projectDescription')?.wordLimit ?? 500} words or fewer
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Project Goals */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="projectGoals" className="text-sm font-medium text-gray-700">
-                          Project Goals
-                        </Label>
-                        <span className={cn(
-                          'text-xs',
-                          goalsWordCount > 500 ? 'text-red-600 font-medium' : 'text-gray-500'
-                        )}>
-                          {goalsWordCount}/500 words
-                        </span>
+                    {fc(4, 'projectGoals')?.visible !== false && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="projectGoals" className="text-sm font-medium text-gray-700">
+                            {fc(4, 'projectGoals')?.label || 'Project Goals'} {fc(4, 'projectGoals')?.required && <span className="text-red-500">*</span>}
+                          </Label>
+                          {(fc(4, 'projectGoals')?.wordLimit ?? 500) > 0 && (
+                            <span className={cn(
+                              'text-xs',
+                              goalsWordCount > (fc(4, 'projectGoals')?.wordLimit ?? 500) ? 'text-red-600 font-medium' : 'text-gray-500'
+                            )}>
+                              {goalsWordCount}/{fc(4, 'projectGoals')?.wordLimit ?? 500} words
+                            </span>
+                          )}
+                        </div>
+                        {fc(4, 'projectGoals')?.helpText && (
+                          <p className="text-xs text-gray-500 mb-1">{fc(4, 'projectGoals')?.helpText}</p>
+                        )}
+                        <Textarea
+                          id="projectGoals"
+                          {...register('projectGoals')}
+                          placeholder={fc(4, 'projectGoals')?.placeholder || 'Describe the goals and objectives of your project...'}
+                          rows={6}
+                          className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                        />
+                        {goalsWordCount > (fc(4, 'projectGoals')?.wordLimit ?? 500) && (
+                          <p className="text-xs text-red-600">
+                            Please reduce your project goals to {fc(4, 'projectGoals')?.wordLimit ?? 500} words or fewer
+                          </p>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        What are the specific goals you hope to achieve with this project?
-                      </p>
-                      <Textarea
-                        id="projectGoals"
-                        {...register('projectGoals')}
-                        placeholder="Describe the goals and objectives of your project..."
-                        rows={6}
-                        className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                      />
-                      {goalsWordCount > 500 && (
-                        <p className="text-xs text-red-600">
-                          Please reduce your project goals to 500 words or fewer
-                        </p>
-                      )}
-                    </div>
+                    )}
 
                     {/* Photo upload hint */}
                     <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
@@ -850,37 +914,41 @@ export default function EditLOIPage() {
                 {currentStep === 5 && (
                   <div className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="totalProjectAmount" className="text-sm font-medium text-gray-700">
-                          Total Dollar Amount of Project <span className="text-red-500">*</span>
-                        </Label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <Input
-                            id="totalProjectAmount"
-                            type="number"
-                            {...register('totalProjectAmount')}
-                            placeholder="100000"
-                            className="h-12 pl-10 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                          />
+                      {fc(5, 'totalProjectAmount')?.visible !== false && (
+                        <div className="space-y-2">
+                          <Label htmlFor="totalProjectAmount" className="text-sm font-medium text-gray-700">
+                            {fc(5, 'totalProjectAmount')?.label || 'Total Dollar Amount of Project'} {(fc(5, 'totalProjectAmount')?.required ?? true) && <span className="text-red-500">*</span>}
+                          </Label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Input
+                              id="totalProjectAmount"
+                              type="number"
+                              {...register('totalProjectAmount')}
+                              placeholder={fc(5, 'totalProjectAmount')?.placeholder || '100000'}
+                              className="h-12 pl-10 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
 
-                      <div className="space-y-2">
-                        <Label htmlFor="grantRequestAmount" className="text-sm font-medium text-gray-700">
-                          Grant Request Amount <span className="text-red-500">*</span>
-                        </Label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <Input
-                            id="grantRequestAmount"
-                            type="number"
-                            {...register('grantRequestAmount')}
-                            placeholder="25000"
-                            className="h-12 pl-10 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                          />
+                      {fc(5, 'grantRequestAmount')?.visible !== false && (
+                        <div className="space-y-2">
+                          <Label htmlFor="grantRequestAmount" className="text-sm font-medium text-gray-700">
+                            {fc(5, 'grantRequestAmount')?.label || 'Grant Request Amount'} {(fc(5, 'grantRequestAmount')?.required ?? true) && <span className="text-red-500">*</span>}
+                          </Label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Input
+                              id="grantRequestAmount"
+                              type="number"
+                              {...register('grantRequestAmount')}
+                              placeholder={fc(5, 'grantRequestAmount')?.placeholder || '25000'}
+                              className="h-12 pl-10 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {percentOfProject && (
@@ -892,34 +960,38 @@ export default function EditLOIPage() {
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="budgetOutline" className="text-sm font-medium text-gray-700">
-                          Proposed Project Budget Outline <span className="text-red-500">*</span>
-                        </Label>
-                        <span className={cn(
-                          'text-xs',
-                          budgetWordCount > 250 ? 'text-red-600 font-medium' : 'text-gray-500'
-                        )}>
-                          {budgetWordCount}/250 words
-                        </span>
+                    {fc(5, 'budgetOutline')?.visible !== false && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="budgetOutline" className="text-sm font-medium text-gray-700">
+                            {fc(5, 'budgetOutline')?.label || 'Proposed Project Budget Outline'} {(fc(5, 'budgetOutline')?.required ?? true) && <span className="text-red-500">*</span>}
+                          </Label>
+                          {(fc(5, 'budgetOutline')?.wordLimit ?? 250) > 0 && (
+                            <span className={cn(
+                              'text-xs',
+                              budgetWordCount > (fc(5, 'budgetOutline')?.wordLimit ?? 250) ? 'text-red-600 font-medium' : 'text-gray-500'
+                            )}>
+                              {budgetWordCount}/{fc(5, 'budgetOutline')?.wordLimit ?? 250} words
+                            </span>
+                          )}
+                        </div>
+                        {fc(5, 'budgetOutline')?.helpText && (
+                          <p className="text-xs text-gray-500 mb-1">{fc(5, 'budgetOutline')?.helpText}</p>
+                        )}
+                        <Textarea
+                          id="budgetOutline"
+                          {...register('budgetOutline')}
+                          placeholder={fc(5, 'budgetOutline')?.placeholder || 'e.g., Staff salaries ($15,000), Program supplies ($5,000)...'}
+                          rows={5}
+                          className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+                        />
+                        {budgetWordCount > (fc(5, 'budgetOutline')?.wordLimit ?? 250) && (
+                          <p className="text-xs text-red-600">
+                            Please reduce your budget outline to {fc(5, 'budgetOutline')?.wordLimit ?? 250} words or fewer
+                          </p>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Provide a simple explanation of how the grant funds would be spent
-                      </p>
-                      <Textarea
-                        id="budgetOutline"
-                        {...register('budgetOutline')}
-                        placeholder="e.g., Staff salaries ($15,000), Program supplies ($5,000), Transportation ($3,000), Facility costs ($2,000)..."
-                        rows={5}
-                        className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
-                      />
-                      {budgetWordCount > 250 && (
-                        <p className="text-xs text-red-600">
-                          Please reduce your budget outline to 250 words or fewer
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 )}
 

@@ -34,6 +34,18 @@ import {
   Download,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useFormConfig } from '@/lib/hooks/useFormConfig'
+import type { FormFieldConfig, FormStepConfig } from '@/lib/default-form-configs'
+
+// Helper to get a field config from the loaded form config
+function getAppField(steps: FormStepConfig[] | undefined, fieldKey: string): FormFieldConfig | undefined {
+  if (!steps) return undefined
+  for (const step of steps) {
+    const field = step.fields.find((f) => f.key === fieldKey)
+    if (field) return field
+  }
+  return undefined
+}
 
 export default function EditApplicationPage({
   params,
@@ -41,6 +53,11 @@ export default function EditApplicationPage({
   params: Promise<{ id: string }>
 }) {
   const router = useRouter()
+  const { config: formConfig } = useFormConfig('APPLICATION')
+
+  // Helper to get field config with fallback
+  const fc = (key: string) => getAppField(formConfig?.steps, key)
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -541,37 +558,46 @@ export default function EditApplicationPage({
               </h2>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="projectTitle">Project Title *</Label>
-                  <Input
-                    id="projectTitle"
-                    {...form.register('projectTitle')}
-                    placeholder="Youth Literacy Program"
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('projectTitle')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="projectTitle">{fc('projectTitle')?.label || 'Project Title'} {(fc('projectTitle')?.required ?? true) ? '*' : ''}</Label>
+                    <Input
+                      id="projectTitle"
+                      {...form.register('projectTitle')}
+                      placeholder={fc('projectTitle')?.placeholder || 'Youth Literacy Program'}
+                      className="bg-white/50"
+                    />
+                    {fc('projectTitle')?.helpText && <p className="text-xs text-gray-500">{fc('projectTitle')?.helpText}</p>}
+                  </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="projectDescription">Project Description *</Label>
-                  <Textarea
-                    id="projectDescription"
-                    {...form.register('projectDescription')}
-                    placeholder="Describe your project in detail..."
-                    rows={5}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('projectDescription')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="projectDescription">{fc('projectDescription')?.label || 'Project Description'} {(fc('projectDescription')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="projectDescription"
+                      {...form.register('projectDescription')}
+                      placeholder={fc('projectDescription')?.placeholder || 'Describe your project in detail...'}
+                      rows={5}
+                      className="bg-white/50"
+                    />
+                    {fc('projectDescription')?.helpText && <p className="text-xs text-gray-500">{fc('projectDescription')?.helpText}</p>}
+                  </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="projectGoals">Project Goals *</Label>
-                  <Textarea
-                    id="projectGoals"
-                    {...form.register('projectGoals')}
-                    placeholder="What are the specific goals of this project?"
-                    rows={4}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('projectGoals')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="projectGoals">{fc('projectGoals')?.label || 'Project Goals'} {(fc('projectGoals')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="projectGoals"
+                      {...form.register('projectGoals')}
+                      placeholder={fc('projectGoals')?.placeholder || 'What are the specific goals of this project?'}
+                      rows={4}
+                      className="bg-white/50"
+                    />
+                    {fc('projectGoals')?.helpText && <p className="text-xs text-gray-500">{fc('projectGoals')?.helpText}</p>}
+                  </div>
+                )}
               </div>
             </GlassCard>
           </FadeIn>
@@ -585,62 +611,72 @@ export default function EditApplicationPage({
               </h2>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="targetPopulation">Target Population Description *</Label>
-                  <Textarea
-                    id="targetPopulation"
-                    {...form.register('targetPopulation')}
-                    placeholder="Describe the population you will serve..."
-                    rows={3}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('targetPopulation')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="targetPopulation">{fc('targetPopulation')?.label || 'Target Population Description'} {(fc('targetPopulation')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="targetPopulation"
+                      {...form.register('targetPopulation')}
+                      placeholder={fc('targetPopulation')?.placeholder || 'Describe the population you will serve...'}
+                      rows={3}
+                      className="bg-white/50"
+                    />
+                  </div>
+                )}
 
                 <div className="grid md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="childrenServed">Children Served *</Label>
-                    <Input
-                      id="childrenServed"
-                      type="number"
-                      {...form.register('childrenServed')}
-                      placeholder="100"
-                      className="bg-white/50"
-                    />
-                  </div>
+                  {fc('childrenServed')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="childrenServed">{fc('childrenServed')?.label || 'Children Served'} {(fc('childrenServed')?.required ?? true) ? '*' : ''}</Label>
+                      <Input
+                        id="childrenServed"
+                        type="number"
+                        {...form.register('childrenServed')}
+                        placeholder={fc('childrenServed')?.placeholder || '100'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="ageRangeStart">Age Range Start</Label>
-                    <Input
-                      id="ageRangeStart"
-                      type="number"
-                      {...form.register('ageRangeStart')}
-                      placeholder="5"
-                      className="bg-white/50"
-                    />
-                  </div>
+                  {fc('ageRangeStart')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="ageRangeStart">{fc('ageRangeStart')?.label || 'Age Range Start'}</Label>
+                      <Input
+                        id="ageRangeStart"
+                        type="number"
+                        {...form.register('ageRangeStart')}
+                        placeholder={fc('ageRangeStart')?.placeholder || '5'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="ageRangeEnd">Age Range End</Label>
-                    <Input
-                      id="ageRangeEnd"
-                      type="number"
-                      {...form.register('ageRangeEnd')}
-                      placeholder="12"
-                      className="bg-white/50"
-                    />
-                  </div>
+                  {fc('ageRangeEnd')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="ageRangeEnd">{fc('ageRangeEnd')?.label || 'Age Range End'}</Label>
+                      <Input
+                        id="ageRangeEnd"
+                        type="number"
+                        {...form.register('ageRangeEnd')}
+                        placeholder={fc('ageRangeEnd')?.placeholder || '12'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="povertyIndicators">Poverty Indicators *</Label>
-                  <Textarea
-                    id="povertyIndicators"
-                    {...form.register('povertyIndicators')}
-                    placeholder="Describe how you identify children in poverty..."
-                    rows={3}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('povertyIndicators')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="povertyIndicators">{fc('povertyIndicators')?.label || 'Poverty Indicators'} {(fc('povertyIndicators')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="povertyIndicators"
+                      {...form.register('povertyIndicators')}
+                      placeholder={fc('povertyIndicators')?.placeholder || 'Describe how you identify children in poverty...'}
+                      rows={3}
+                      className="bg-white/50"
+                    />
+                  </div>
+                )}
               </div>
             </GlassCard>
           </FadeIn>
@@ -653,37 +689,43 @@ export default function EditApplicationPage({
                 Demographics & Poverty Metrics
               </h2>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="clientDemographicDescription">Client Demographic Description</Label>
-                  <Textarea
-                    id="clientDemographicDescription"
-                    {...form.register('clientDemographicDescription')}
-                    placeholder="Describe the demographics of the population your project serves..."
-                    rows={3}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('clientDemographicDescription')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="clientDemographicDescription">{fc('clientDemographicDescription')?.label || 'Client Demographic Description'}</Label>
+                    <Textarea
+                      id="clientDemographicDescription"
+                      {...form.register('clientDemographicDescription')}
+                      placeholder={fc('clientDemographicDescription')?.placeholder || 'Describe the demographics of the population your project serves...'}
+                      rows={3}
+                      className="bg-white/50"
+                    />
+                  </div>
+                )}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="childrenInPovertyImpacted">Children in Poverty Impacted</Label>
-                    <Input
-                      id="childrenInPovertyImpacted"
-                      type="number"
-                      {...form.register('childrenInPovertyImpacted')}
-                      placeholder="Number of children in poverty"
-                      className="bg-white/50"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="totalChildrenServedAnnually">Total Children Served Annually</Label>
-                    <Input
-                      id="totalChildrenServedAnnually"
-                      type="number"
-                      {...form.register('totalChildrenServedAnnually')}
-                      placeholder="Total children served per year"
-                      className="bg-white/50"
-                    />
-                  </div>
+                  {fc('childrenInPovertyImpacted')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="childrenInPovertyImpacted">{fc('childrenInPovertyImpacted')?.label || 'Children in Poverty Impacted'}</Label>
+                      <Input
+                        id="childrenInPovertyImpacted"
+                        type="number"
+                        {...form.register('childrenInPovertyImpacted')}
+                        placeholder={fc('childrenInPovertyImpacted')?.placeholder || 'Number of children in poverty'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
+                  {fc('totalChildrenServedAnnually')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="totalChildrenServedAnnually">{fc('totalChildrenServedAnnually')?.label || 'Total Children Served Annually'}</Label>
+                      <Input
+                        id="totalChildrenServedAnnually"
+                        type="number"
+                        {...form.register('totalChildrenServedAnnually')}
+                        placeholder={fc('totalChildrenServedAnnually')?.placeholder || 'Total children served per year'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
                 </div>
                 {/* Auto-calculated poverty percentage */}
                 {form.watch('childrenInPovertyImpacted') && form.watch('totalChildrenServedAnnually') && (
@@ -710,48 +752,56 @@ export default function EditApplicationPage({
 
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
+                  {fc('projectStartDate')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="projectStartDate">{fc('projectStartDate')?.label || 'Start Date'} {(fc('projectStartDate')?.required ?? true) ? '*' : ''}</Label>
+                      <Input
+                        id="projectStartDate"
+                        type="date"
+                        {...form.register('projectStartDate')}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
+
+                  {fc('projectEndDate')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="projectEndDate">{fc('projectEndDate')?.label || 'End Date'} {(fc('projectEndDate')?.required ?? true) ? '*' : ''}</Label>
+                      <Input
+                        id="projectEndDate"
+                        type="date"
+                        {...form.register('projectEndDate')}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {fc('timelineDetails')?.visible !== false && (
                   <div className="space-y-2">
-                    <Label htmlFor="projectStartDate">Start Date *</Label>
-                    <Input
-                      id="projectStartDate"
-                      type="date"
-                      {...form.register('projectStartDate')}
+                    <Label htmlFor="timelineDetails">{fc('timelineDetails')?.label || 'Additional Timeline Details'}</Label>
+                    <Textarea
+                      id="timelineDetails"
+                      value={timelineDetails}
+                      onChange={(e) => setTimelineDetails(e.target.value)}
+                      placeholder={fc('timelineDetails')?.placeholder || 'Provide any additional details about your project timeline, key milestones, or phases...'}
+                      rows={3}
                       className="bg-white/50"
                     />
                   </div>
+                )}
 
+                {fc('geographicArea')?.visible !== false && (
                   <div className="space-y-2">
-                    <Label htmlFor="projectEndDate">End Date *</Label>
+                    <Label htmlFor="geographicArea">{fc('geographicArea')?.label || 'Geographic Area Served'} {(fc('geographicArea')?.required ?? true) ? '*' : ''}</Label>
                     <Input
-                      id="projectEndDate"
-                      type="date"
-                      {...form.register('projectEndDate')}
+                      id="geographicArea"
+                      {...form.register('geographicArea')}
+                      placeholder={fc('geographicArea')?.placeholder || 'Area could be region, municipality, or neighborhood'}
                       className="bg-white/50"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="timelineDetails">Additional Timeline Details</Label>
-                  <Textarea
-                    id="timelineDetails"
-                    value={timelineDetails}
-                    onChange={(e) => setTimelineDetails(e.target.value)}
-                    placeholder="Provide any additional details about your project timeline, key milestones, or phases..."
-                    rows={3}
-                    className="bg-white/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="geographicArea">Geographic Area Served *</Label>
-                  <Input
-                    id="geographicArea"
-                    {...form.register('geographicArea')}
-                    placeholder="Area could be region, municipality, or neighborhood"
-                    className="bg-white/50"
-                  />
-                </div>
+                )}
               </div>
             </GlassCard>
           </FadeIn>
@@ -766,27 +816,31 @@ export default function EditApplicationPage({
 
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amountRequested">Amount Requested *</Label>
-                    <Input
-                      id="amountRequested"
-                      type="number"
-                      {...form.register('amountRequested')}
-                      placeholder="25000"
-                      className="bg-white/50"
-                    />
-                  </div>
+                  {fc('amountRequested')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="amountRequested">{fc('amountRequested')?.label || 'Amount Requested'} {(fc('amountRequested')?.required ?? true) ? '*' : ''}</Label>
+                      <Input
+                        id="amountRequested"
+                        type="number"
+                        {...form.register('amountRequested')}
+                        placeholder={fc('amountRequested')?.placeholder || '25000'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="totalProjectBudget">Total Project Budget *</Label>
-                    <Input
-                      id="totalProjectBudget"
-                      type="number"
-                      {...form.register('totalProjectBudget')}
-                      placeholder="50000"
-                      className="bg-white/50"
-                    />
-                  </div>
+                  {fc('totalProjectBudget')?.visible !== false && (
+                    <div className="space-y-2">
+                      <Label htmlFor="totalProjectBudget">{fc('totalProjectBudget')?.label || 'Total Project Budget'} {(fc('totalProjectBudget')?.required ?? true) ? '*' : ''}</Label>
+                      <Input
+                        id="totalProjectBudget"
+                        type="number"
+                        {...form.register('totalProjectBudget')}
+                        placeholder={fc('totalProjectBudget')?.placeholder || '50000'}
+                        className="bg-white/50"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Confirmed Funding Sources */}
@@ -969,38 +1023,47 @@ export default function EditApplicationPage({
               </h2>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expectedOutcomes">Expected Outcomes *</Label>
-                  <Textarea
-                    id="expectedOutcomes"
-                    {...form.register('expectedOutcomes')}
-                    placeholder="What outcomes do you expect from this project?"
-                    rows={4}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('expectedOutcomes')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="expectedOutcomes">{fc('expectedOutcomes')?.label || 'Expected Outcomes'} {(fc('expectedOutcomes')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="expectedOutcomes"
+                      {...form.register('expectedOutcomes')}
+                      placeholder={fc('expectedOutcomes')?.placeholder || 'What outcomes do you expect from this project?'}
+                      rows={4}
+                      className="bg-white/50"
+                    />
+                    {fc('expectedOutcomes')?.helpText && <p className="text-xs text-gray-500">{fc('expectedOutcomes')?.helpText}</p>}
+                  </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="measurementPlan">Measurement Plan *</Label>
-                  <Textarea
-                    id="measurementPlan"
-                    {...form.register('measurementPlan')}
-                    placeholder="How will you measure and track success?"
-                    rows={4}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('measurementPlan')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="measurementPlan">{fc('measurementPlan')?.label || 'Measurement Plan'} {(fc('measurementPlan')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="measurementPlan"
+                      {...form.register('measurementPlan')}
+                      placeholder={fc('measurementPlan')?.placeholder || 'How will you measure and track success?'}
+                      rows={4}
+                      className="bg-white/50"
+                    />
+                    {fc('measurementPlan')?.helpText && <p className="text-xs text-gray-500">{fc('measurementPlan')?.helpText}</p>}
+                  </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="sustainabilityPlan">Sustainability Plan *</Label>
-                  <Textarea
-                    id="sustainabilityPlan"
-                    {...form.register('sustainabilityPlan')}
-                    placeholder="How will this project continue beyond the grant period?"
-                    rows={4}
-                    className="bg-white/50"
-                  />
-                </div>
+                {fc('sustainabilityPlan')?.visible !== false && (
+                  <div className="space-y-2">
+                    <Label htmlFor="sustainabilityPlan">{fc('sustainabilityPlan')?.label || 'Sustainability Plan'} {(fc('sustainabilityPlan')?.required ?? true) ? '*' : ''}</Label>
+                    <Textarea
+                      id="sustainabilityPlan"
+                      {...form.register('sustainabilityPlan')}
+                      placeholder={fc('sustainabilityPlan')?.placeholder || 'How will this project continue beyond the grant period?'}
+                      rows={4}
+                      className="bg-white/50"
+                    />
+                    {fc('sustainabilityPlan')?.helpText && <p className="text-xs text-gray-500">{fc('sustainabilityPlan')?.helpText}</p>}
+                  </div>
+                )}
               </div>
             </GlassCard>
           </FadeIn>
