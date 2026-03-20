@@ -199,6 +199,15 @@ export default function NewApplicationPage() {
         if (appResponse.ok) {
           const app = await appResponse.json()
           setApplicationId(app.id)
+        } else {
+          const error = await appResponse.json()
+          if (error.error === 'PROFILE_REVIEW_REQUIRED' && error.cycleId) {
+            toast.info('Please review your organization profile before starting an application')
+            router.push(`/profile/review?cycleId=${error.cycleId}&returnTo=/applications/new`)
+            return
+          }
+          toast.error(error.error || 'Failed to create application')
+          router.push('/applications')
         }
       } catch (error) {
         console.error('Error initializing:', error)

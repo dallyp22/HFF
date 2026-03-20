@@ -31,7 +31,6 @@ import {
   TrendingUp,
   AlertTriangle,
   ChevronRight,
-  ChevronDown,
   ExternalLink,
   Image as ImageIcon,
 } from 'lucide-react'
@@ -109,7 +108,6 @@ export function ApplicationDetailView({
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
   const [highlights, setHighlights] = useState<Highlight[]>(application.highlights || [])
-  const [analysisPanelOpen, setAnalysisPanelOpen] = useState(false)
 
   const fetchHighlights = useCallback(async () => {
     try {
@@ -247,28 +245,34 @@ export function ApplicationDetailView({
         {/* Left Sidebar - Staff Notes & Analysis */}
         <FadeIn delay={0.1} className="w-80 lg:w-96 flex-shrink-0 hidden md:block">
           <div className="h-full overflow-y-auto bg-gradient-to-b from-[var(--hff-teal)]/[0.02] via-slate-50/80 to-white/60 backdrop-blur-sm border-r border-[var(--hff-teal)]/10 p-5">
-            {/* Header with collapse toggle */}
-            <div className="mb-5 pb-4 border-b border-gray-200/50">
-              <button
-                onClick={() => setAnalysisPanelOpen(!analysisPanelOpen)}
-                className="w-full flex items-center justify-between group"
+            {/* Prominent Organization Profile Button */}
+            <FadeIn delay={0.05}>
+              <Link
+                href={`/reviewer/organizations/${application.organizationId}`}
+                className="flex items-center justify-between w-full px-4 py-3 mb-3 rounded-xl bg-[var(--hff-teal)]/10 border border-[var(--hff-teal)]/20 hover:bg-[var(--hff-teal)]/15 transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-gray-100 shadow-sm">
-                    <FileText className="w-5 h-5 text-gray-500" />
-                  </div>
-                  <div className="text-left">
-                    <h2 className="text-sm font-bold text-gray-900">Staff Notes & Analysis</h2>
-                    <p className="text-[10px] text-gray-500 font-medium">Supplementary analysis</p>
+                  <Building2 className="w-5 h-5 text-[var(--hff-teal)]" />
+                  <div>
+                    <span className="font-semibold text-sm text-gray-900 block">Organization Profile</span>
+                    <span className="text-xs text-gray-500">{application.organization?.legalName}</span>
                   </div>
                 </div>
-                <motion.div
-                  animate={{ rotate: analysisPanelOpen ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                </motion.div>
-              </button>
+                <ExternalLink className="w-4 h-4 text-[var(--hff-teal)] group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </FadeIn>
+
+            {/* Header */}
+            <div className="mb-5 pb-4 border-b border-gray-200/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gray-100 shadow-sm">
+                  <FileText className="w-5 h-5 text-gray-500" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-sm font-bold text-gray-900">Staff Notes & Analysis</h2>
+                  <p className="text-[10px] text-gray-500 font-medium">Supplementary analysis</p>
+                </div>
+              </div>
 
               {/* Disclaimer */}
               <p className="mt-3 text-[10px] text-gray-400 leading-relaxed">
@@ -276,41 +280,19 @@ export function ApplicationDetailView({
               </p>
             </div>
 
-            <AnimatePresence initial={false}>
-              {analysisPanelOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className="overflow-hidden"
-                >
-                  <AISummaryDisplay
-                    summary={application.aiSummary}
-                    missionAlignment={application.aiMissionAlignment}
-                    budgetAnalysis={application.aiBudgetAnalysis}
-                    strengths={application.aiStrengths || []}
-                    concerns={application.aiConcerns || []}
-                    questions={application.aiQuestions || []}
-                    generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
-                    applicationId={application.id}
-                    isAdmin={userIsAdmin}
-                    highlights={highlights}
-                    onHighlightChange={fetchHighlights}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!analysisPanelOpen && (
-              <button
-                onClick={() => setAnalysisPanelOpen(true)}
-                className="w-full py-2.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-                Show Analysis
-              </button>
-            )}
+            <AISummaryDisplay
+              summary={application.aiSummary}
+              missionAlignment={application.aiMissionAlignment}
+              budgetAnalysis={application.aiBudgetAnalysis}
+              strengths={application.aiStrengths || []}
+              concerns={application.aiConcerns || []}
+              questions={application.aiQuestions || []}
+              generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
+              applicationId={application.id}
+              isAdmin={userIsAdmin}
+              highlights={highlights}
+              onHighlightChange={fetchHighlights}
+            />
           </div>
         </FadeIn>
 
@@ -611,13 +593,6 @@ function OverviewTab({
             </p>
           </div>
         </div>
-        <Link
-          href={`/reviewer/organizations/${application.organizationId}`}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--hff-teal)] hover:text-[var(--hff-teal-dark)] transition-colors"
-        >
-          View Full Organization Profile
-          <ChevronRight className="w-4 h-4" />
-        </Link>
       </GlassCard>
 
       {/* Form 990 Financial Breakdown */}

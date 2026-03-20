@@ -12,6 +12,7 @@ import {
   Settings,
   Database,
   Pencil,
+  BarChart3,
 } from 'lucide-react'
 
 const adminNavItems = [
@@ -20,6 +21,7 @@ const adminNavItems = [
   { href: '/reviewer/admin/users', label: 'Reviewers', icon: Users },
   { href: '/reviewer/admin/invitations', label: 'Invites', icon: LinkIcon },
   { href: '/reviewer/admin/releases', label: 'Releases', icon: Bell },
+  { href: '/reviewer/admin/reports', label: 'Reports', icon: BarChart3 },
   { href: '/reviewer/admin/forms', label: 'Forms', icon: Pencil },
   { href: '/reviewer/admin/settings', label: 'Settings', icon: Settings },
   { href: '/reviewer/admin/reset', label: 'Data', icon: Database },
