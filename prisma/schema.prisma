@@ -295,6 +295,9 @@ model LetterOfInterest {
   reviewNotes           String?      @db.Text
   decisionReason        String?      @db.Text
 
+  // Custom Fields (admin-defined questions, stored as JSON)
+  customFields          Json?
+
   // Multi-step form tracking
   currentStep           Int          @default(1)
   completedSteps        Int[]        @default([])
@@ -439,6 +442,9 @@ model Application {
 
   // Budget Breakdown (JSON for flexibility)
   budgetBreakdown       Json?
+
+  // Custom Fields (admin-defined questions, stored as JSON)
+  customFields          Json?
 
   // Application Progress (for multi-step form)
   currentStep           Int               @default(1)
