@@ -59,6 +59,7 @@ export default function EditApplicationPage({
   const fc = (key: string) => getAppField(formConfig?.steps, key)
 
   const [loading, setLoading] = useState(true)
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [application, setApplication] = useState<any>(null)
@@ -127,6 +128,11 @@ export default function EditApplicationPage({
           }
 
           setApplication(app)
+
+          // Populate custom fields
+          if (app.customFields && typeof app.customFields === 'object') {
+            setCustomFieldValues(app.customFields as Record<string, string>)
+          }
 
           form.reset({
             projectTitle: app.projectTitle || '',
@@ -281,7 +287,7 @@ export default function EditApplicationPage({
     const response = await fetch(`/api/applications/${applicationId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, ...getStructuredData() }),
+      body: JSON.stringify({ ...data, ...getStructuredData(), customFields: Object.keys(customFieldValues).length > 0 ? customFieldValues : undefined }),
     })
 
     if (!response.ok) {
@@ -1348,6 +1354,73 @@ export default function EditApplicationPage({
               )}
             </GlassCard>
           </FadeIn>
+
+          {/* Custom Fields (admin-defined) */}
+          {formConfig?.steps && (() => {
+            const allCustomFields = formConfig.steps.flatMap((s) =>
+              s.fields.filter((f) => f.isCustom && f.visible)
+            )
+            if (allCustomFields.length === 0) return null
+            return (
+              <FadeIn delay={0.39}>
+                <GlassCard className="p-6">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                    <FileText className="w-5 h-5 text-[var(--hff-teal)]" />
+                    Additional Questions
+                  </h2>
+                  <div className="space-y-4">
+                    {allCustomFields.map((field) => (
+                      <div key={field.key} className="space-y-2">
+                        <Label htmlFor={field.key}>
+                          {field.label} {field.required ? '*' : ''}
+                        </Label>
+                        {field.helpText && <p className="text-xs text-gray-500">{field.helpText}</p>}
+                        {(field.type === 'text' || field.type === 'currency') && (
+                          <Input
+                            id={field.key}
+                            type={field.type === 'currency' ? 'number' : 'text'}
+                            value={customFieldValues[field.key] || ''}
+                            onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            placeholder={field.placeholder || ''}
+                            className="bg-white/50"
+                          />
+                        )}
+                        {field.type === 'textarea' && (
+                          <Textarea
+                            id={field.key}
+                            value={customFieldValues[field.key] || ''}
+                            onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            placeholder={field.placeholder || ''}
+                            rows={4}
+                            className="bg-white/50"
+                          />
+                        )}
+                        {field.type === 'number' && (
+                          <Input
+                            id={field.key}
+                            type="number"
+                            value={customFieldValues[field.key] || ''}
+                            onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            placeholder={field.placeholder || ''}
+                            className="bg-white/50"
+                          />
+                        )}
+                        {field.type === 'date' && (
+                          <Input
+                            id={field.key}
+                            type="date"
+                            value={customFieldValues[field.key] || ''}
+                            onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            className="bg-white/50"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </GlassCard>
+              </FadeIn>
+            )
+          })()}
 
           {/* Action Buttons */}
           <FadeIn delay={0.4}>

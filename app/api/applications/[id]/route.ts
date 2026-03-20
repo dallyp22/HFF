@@ -122,6 +122,9 @@ export async function PATCH(
     if (body.projectStartDate) updateData.projectStartDate = new Date(body.projectStartDate)
     if (body.projectEndDate) updateData.projectEndDate = new Date(body.projectEndDate)
 
+    // Custom fields (admin-defined questions stored as JSON)
+    if (body.customFields !== undefined) updateData.customFields = body.customFields
+
     const application = await prisma.application.update({
       where: { id },
       data: updateData,

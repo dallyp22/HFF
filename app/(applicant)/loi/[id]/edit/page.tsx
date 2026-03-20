@@ -181,6 +181,7 @@ export default function EditLOIPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [direction, setDirection] = useState(0)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({})
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -269,6 +270,11 @@ export default function EditLOIPage() {
         setLoi(data)
         setCurrentStep(data.currentStep || 1)
 
+        // Populate custom fields
+        if (data.customFields && typeof data.customFields === 'object') {
+          setCustomFieldValues(data.customFields as Record<string, string>)
+        }
+
         // Populate form
         reset({
           primaryContactName: data.primaryContactName || '',
@@ -323,6 +329,7 @@ export default function EditLOIPage() {
         isNewProject: data.isNewProject === 'yes' ? true : data.isNewProject === 'no' ? false : null,
         isCapacityIncrease: data.isCapacityIncrease === 'yes' ? true : data.isCapacityIncrease === 'no' ? false : null,
         currentStep,
+        customFields: Object.keys(customFieldValues).length > 0 ? customFieldValues : undefined,
       }
 
       const response = await fetch(`/api/loi/${loiId}`, {
@@ -409,6 +416,67 @@ export default function EditLOIPage() {
       setDirection(-1)
       setCurrentStep(currentStep - 1)
     }
+  }
+
+  // Render custom fields for a given step
+  const renderCustomFields = (stepId: number) => {
+    if (!formConfig?.steps) return null
+    const stepConfig = formConfig.steps.find((s) => s.id === stepId)
+    if (!stepConfig) return null
+    const customFields = stepConfig.fields.filter((f) => f.isCustom && f.visible)
+    if (customFields.length === 0) return null
+
+    return (
+      <div className="space-y-4 pt-4 border-t border-gray-100 mt-4">
+        {customFields.map((field) => (
+          <div key={field.key} className="space-y-2">
+            <Label htmlFor={field.key} className="text-sm font-medium text-gray-700">
+              {field.label} {field.required && <span className="text-red-500">*</span>}
+            </Label>
+            {field.helpText && <p className="text-xs text-gray-500">{field.helpText}</p>}
+            {(field.type === 'text' || field.type === 'currency') && (
+              <Input
+                id={field.key}
+                type={field.type === 'currency' ? 'number' : 'text'}
+                value={customFieldValues[field.key] || ''}
+                onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder || ''}
+                className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+              />
+            )}
+            {field.type === 'textarea' && (
+              <Textarea
+                id={field.key}
+                value={customFieldValues[field.key] || ''}
+                onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder || ''}
+                rows={4}
+                className="rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+              />
+            )}
+            {(field.type === 'number') && (
+              <Input
+                id={field.key}
+                type="number"
+                value={customFieldValues[field.key] || ''}
+                onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder || ''}
+                className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+              />
+            )}
+            {field.type === 'date' && (
+              <Input
+                id={field.key}
+                type="date"
+                value={customFieldValues[field.key] || ''}
+                onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                className="h-12 rounded-xl border-gray-200 focus:border-[var(--hff-teal)] focus:ring-[var(--hff-teal)]/20"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    )
   }
 
   if (loading) {
@@ -642,6 +710,7 @@ export default function EditLOIPage() {
                         />
                       </div>
                     )}
+                    {renderCustomFields(1)}
                   </div>
                 )}
 
@@ -732,6 +801,7 @@ export default function EditLOIPage() {
                         ))}
                       </div>
                     </div>}
+                    {renderCustomFields(2)}
                   </div>
                 )}
 
@@ -807,6 +877,7 @@ export default function EditLOIPage() {
                         />
                       )}
                     </div>}
+                    {renderCustomFields(3)}
                   </div>
                 )}
 
@@ -907,6 +978,7 @@ export default function EditLOIPage() {
                         </div>
                       </div>
                     </div>
+                    {renderCustomFields(4)}
                   </div>
                 )}
 
@@ -992,6 +1064,7 @@ export default function EditLOIPage() {
                         )}
                       </div>
                     )}
+                    {renderCustomFields(5)}
                   </div>
                 )}
 
