@@ -21,6 +21,7 @@ import {
   Activity,
   ChevronRight,
   Pencil,
+  BarChart3,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -69,6 +70,13 @@ const quickActions = [
     href: '/reviewer/organizations',
     icon: Building2,
     color: 'bg-[var(--hff-sage)]',
+  },
+  {
+    title: 'Reports',
+    description: 'View per-cycle stats and outcomes',
+    href: '/reviewer/admin/reports',
+    icon: BarChart3,
+    color: 'bg-indigo-600',
   },
   {
     title: 'Edit Forms',
