@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { GlassCard } from '@/components/glass/GlassCard'
 import { GlassBadge } from '@/components/glass/GlassBadge'
@@ -87,10 +88,11 @@ const statusFilters = [
 ]
 
 export default function ReviewerLOIListPage() {
+  const searchParams = useSearchParams()
   const [lois, setLois] = useState<LOI[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
   const [isAdmin, setIsAdmin] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<LOI | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
