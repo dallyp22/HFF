@@ -187,6 +187,9 @@ export async function PATCH(
     if (percentOfProject !== undefined) updateData.percentOfProject = percentOfProject
     if (body.budgetOutline !== undefined) updateData.budgetOutline = body.budgetOutline
 
+    // Custom fields (admin-defined questions stored as JSON)
+    if (body.customFields !== undefined) updateData.customFields = body.customFields
+
     // Form progress
     if (body.currentStep !== undefined) updateData.currentStep = body.currentStep
     if (body.completedSteps !== undefined) updateData.completedSteps = body.completedSteps

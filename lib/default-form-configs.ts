@@ -2,7 +2,7 @@
 // These define the structure, labels, and field properties that admins can customize
 
 export interface FormFieldConfig {
-  key: string           // Maps to database column
+  key: string           // Maps to database column (built-in) or custom key (custom_*)
   label: string
   type: 'text' | 'textarea' | 'number' | 'date' | 'radio' | 'checkbox' | 'select' | 'currency' | 'file'
   placeholder?: string
@@ -11,6 +11,7 @@ export interface FormFieldConfig {
   visible: boolean
   wordLimit?: number
   options?: { value: string; label: string; note?: string }[]
+  isCustom?: boolean    // true for admin-added fields (stored in customFields JSON)
 }
 
 export interface FormStepConfig {

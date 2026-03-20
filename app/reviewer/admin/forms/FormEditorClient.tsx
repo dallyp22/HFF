@@ -24,6 +24,8 @@ import {
   ChevronRight,
   RotateCcw,
   Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import type { FormConfigData, FormStepConfig, FormFieldConfig } from '@/lib/default-form-configs'
 
@@ -118,6 +120,41 @@ export function FormEditorClient() {
                   : f
               ),
             }
+          : s
+      ),
+    }
+    setCurrentConfig(newConfig)
+  }
+
+  function addField(stepId: number, fieldType: FormFieldConfig['type'] = 'text') {
+    if (!currentConfig) return
+    const key = `custom_${Date.now()}`
+    const newField: FormFieldConfig = {
+      key,
+      label: 'New Question',
+      type: fieldType,
+      placeholder: '',
+      helpText: '',
+      required: false,
+      visible: true,
+      isCustom: true,
+    }
+    const newConfig = {
+      ...currentConfig,
+      steps: currentConfig.steps.map((s) =>
+        s.id === stepId ? { ...s, fields: [...s.fields, newField] } : s
+      ),
+    }
+    setCurrentConfig(newConfig)
+  }
+
+  function removeField(stepId: number, fieldKey: string) {
+    if (!currentConfig) return
+    const newConfig = {
+      ...currentConfig,
+      steps: currentConfig.steps.map((s) =>
+        s.id === stepId
+          ? { ...s, fields: s.fields.filter((f) => f.key !== fieldKey) }
           : s
       ),
     }
@@ -235,11 +272,11 @@ export function FormEditorClient() {
             )}
 
             <TabsContent value="LOI" className="space-y-4">
-              {loiConfig && <StepEditor config={loiConfig} expandedSteps={expandedSteps} toggleStep={toggleStep} updateStep={updateStep} updateField={updateField} updateOption={updateOption} formType="LOI" />}
+              {loiConfig && <StepEditor config={loiConfig} expandedSteps={expandedSteps} toggleStep={toggleStep} updateStep={updateStep} updateField={updateField} updateOption={updateOption} addField={addField} removeField={removeField} formType="LOI" />}
             </TabsContent>
 
             <TabsContent value="APPLICATION" className="space-y-4">
-              {appConfig && <StepEditor config={appConfig} expandedSteps={expandedSteps} toggleStep={toggleStep} updateStep={updateStep} updateField={updateField} updateOption={updateOption} formType="APPLICATION" />}
+              {appConfig && <StepEditor config={appConfig} expandedSteps={expandedSteps} toggleStep={toggleStep} updateStep={updateStep} updateField={updateField} updateOption={updateOption} addField={addField} removeField={removeField} formType="APPLICATION" />}
             </TabsContent>
           </Tabs>
         </FadeIn>
@@ -255,6 +292,8 @@ function StepEditor({
   updateStep,
   updateField,
   updateOption,
+  addField,
+  removeField,
   formType,
 }: {
   config: FormConfigData
@@ -263,6 +302,8 @@ function StepEditor({
   updateStep: (stepId: number, updates: Partial<FormStepConfig>) => void
   updateField: (stepId: number, fieldKey: string, updates: Partial<FormFieldConfig>) => void
   updateOption: (stepId: number, fieldKey: string, optionIndex: number, updates: Partial<{ value: string; label: string; note: string }>) => void
+  addField: (stepId: number, fieldType?: FormFieldConfig['type']) => void
+  removeField: (stepId: number, fieldKey: string) => void
   formType: string
 }) {
   return (
@@ -315,7 +356,7 @@ function StepEditor({
                 </div>
 
                 {/* Fields */}
-                {step.fields.length === 0 ? (
+                {step.fields.length === 0 && step.id === config.steps[config.steps.length - 1]?.id ? (
                   <p className="text-sm text-gray-400 italic">This is the review/submit step — no editable fields.</p>
                 ) : (
                   <div className="space-y-4">
@@ -326,8 +367,47 @@ function StepEditor({
                         stepId={step.id}
                         updateField={updateField}
                         updateOption={updateOption}
+                        removeField={field.isCustom ? removeField : undefined}
                       />
                     ))}
+                  </div>
+                )}
+
+                {/* Add Field Button */}
+                {step.id !== config.steps[config.steps.length - 1]?.id && (
+                  <div className="pt-4 border-t border-gray-100 mt-4">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addField(step.id, 'text')}
+                        className="gap-1.5 text-[var(--hff-teal)] border-[var(--hff-teal)]/30 hover:bg-[var(--hff-teal)]/5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Text Field
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addField(step.id, 'textarea')}
+                        className="gap-1.5 text-gray-600"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Text Area
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addField(step.id, 'number')}
+                        className="gap-1.5 text-gray-600"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Number
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -344,11 +424,13 @@ function FieldEditor({
   stepId,
   updateField,
   updateOption,
+  removeField,
 }: {
   field: FormFieldConfig
   stepId: number
   updateField: (stepId: number, fieldKey: string, updates: Partial<FormFieldConfig>) => void
   updateOption: (stepId: number, fieldKey: string, optionIndex: number, updates: Partial<{ value: string; label: string; note: string }>) => void
+  removeField?: (stepId: number, fieldKey: string) => void
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -399,6 +481,18 @@ function FieldEditor({
             {field.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
             {field.visible ? 'Visible' : 'Hidden'}
           </button>
+
+          {removeField && (
+            <button
+              type="button"
+              onClick={() => removeField(stepId, field.key)}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700"
+              title="Delete this custom field"
+            >
+              <Trash2 className="w-3 h-3" />
+              Delete
+            </button>
+          )}
 
           <button
             type="button"
@@ -484,9 +578,30 @@ function FieldEditor({
             </div>
           )}
 
+          {field.isCustom && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-gray-500">Field Type</Label>
+              <select
+                value={field.type}
+                onChange={(e) => updateField(stepId, field.key, { type: e.target.value as FormFieldConfig['type'] })}
+                className="h-9 text-sm rounded-md border border-gray-200 px-2 w-40"
+              >
+                <option value="text">Short Text</option>
+                <option value="textarea">Long Text</option>
+                <option value="number">Number</option>
+                <option value="currency">Currency</option>
+                <option value="date">Date</option>
+              </select>
+            </div>
+          )}
+
           <div className="pt-2">
             <p className="text-xs text-gray-400">
-              Database field: <code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">{field.key}</code>
+              {field.isCustom ? (
+                <span className="inline-flex items-center gap-1"><span className="px-1.5 py-0.5 bg-[var(--hff-teal)]/10 text-[var(--hff-teal)] rounded text-xs font-medium">Custom</span> Stored in customFields JSON</span>
+              ) : (
+                <>Database field: <code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">{field.key}</code></>
+              )}
             </p>
           </div>
         </div>
