@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { GlassCard } from '@/components/glass/GlassCard'
 import { GlassBadge } from '@/components/glass/GlassBadge'
 import { AnimatedCounter } from '@/components/motion/AnimatedCounter'
@@ -231,65 +232,71 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                   {/* LOIs Submitted */}
                   <StaggerItem>
-                    <GlassCard
-                      className="p-5 relative overflow-hidden"
-                      aria-label={`LOIs submitted: ${stats.loi.byStatus['SUBMITTED'] ?? 0 + (stats.loi.byStatus['UNDER_REVIEW'] ?? 0) + (stats.loi.byStatus['APPROVED'] ?? 0) + (stats.loi.byStatus['DECLINED'] ?? 0)}`}
-                    >
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-8 -mt-8" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-2 rounded-lg bg-purple-100">
-                            <ClipboardList className="w-5 h-5 text-purple-600" />
+                    <Link href="/reviewer/lois" className="block group/card">
+                      <GlassCard
+                        className="p-5 relative overflow-hidden group-hover/card:ring-1 group-hover/card:ring-[var(--hff-teal)]/30 transition-all"
+                        aria-label={`LOIs submitted: ${stats.loi.total}`}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-2 rounded-lg bg-purple-100">
+                              <ClipboardList className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">LOIs Submitted</span>
                           </div>
-                          <span className="text-sm font-medium text-gray-600">LOIs Submitted</span>
+                          <p className="text-3xl font-bold text-gray-900">
+                            <AnimatedCounter value={stats.loi.total} />
+                          </p>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          <AnimatedCounter value={stats.loi.total} />
-                        </p>
-                      </div>
-                    </GlassCard>
+                      </GlassCard>
+                    </Link>
                   </StaggerItem>
 
                   {/* Apps Submitted */}
                   <StaggerItem>
-                    <GlassCard
-                      className="p-5 relative overflow-hidden"
-                      aria-label={`Applications submitted: ${stats.applications.submitted}`}
-                    >
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-8 -mt-8" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-2 rounded-lg bg-blue-100">
-                            <FileText className="w-5 h-5 text-blue-600" />
+                    <Link href={`/reviewer/applications?cycle=${cycles.find(c => c.id === selectedCycleId)?.cycle || ''}`} className="block group/card">
+                      <GlassCard
+                        className="p-5 relative overflow-hidden group-hover/card:ring-1 group-hover/card:ring-[var(--hff-teal)]/30 transition-all"
+                        aria-label={`Applications submitted: ${stats.applications.submitted}`}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-2 rounded-lg bg-blue-100">
+                              <FileText className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">Apps Submitted</span>
                           </div>
-                          <span className="text-sm font-medium text-gray-600">Apps Submitted</span>
+                          <p className="text-3xl font-bold text-gray-900">
+                            <AnimatedCounter value={stats.applications.submitted} />
+                          </p>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          <AnimatedCounter value={stats.applications.submitted} />
-                        </p>
-                      </div>
-                    </GlassCard>
+                      </GlassCard>
+                    </Link>
                   </StaggerItem>
 
                   {/* Approved */}
                   <StaggerItem>
-                    <GlassCard
-                      className="p-5 relative overflow-hidden"
-                      aria-label={`Approved applications: ${stats.applications.byStatus['APPROVED'] ?? 0}`}
-                    >
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -mr-8 -mt-8" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-2 rounded-lg bg-emerald-100">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <Link href={`/reviewer/applications?status=APPROVED&cycle=${cycles.find(c => c.id === selectedCycleId)?.cycle || ''}`} className="block group/card">
+                      <GlassCard
+                        className="p-5 relative overflow-hidden group-hover/card:ring-1 group-hover/card:ring-[var(--hff-teal)]/30 transition-all"
+                        aria-label={`Approved applications: ${stats.applications.byStatus['APPROVED'] ?? 0}`}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-2 rounded-lg bg-emerald-100">
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">Approved</span>
                           </div>
-                          <span className="text-sm font-medium text-gray-600">Approved</span>
+                          <p className="text-3xl font-bold text-gray-900">
+                            <AnimatedCounter value={stats.applications.byStatus['APPROVED'] ?? 0} />
+                          </p>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          <AnimatedCounter value={stats.applications.byStatus['APPROVED'] ?? 0} />
-                        </p>
-                      </div>
-                    </GlassCard>
+                      </GlassCard>
+                    </Link>
                   </StaggerItem>
 
                   {/* Total Requested */}
@@ -351,12 +358,17 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                       const count = stats.loi.byStatus[status] ?? 0
                       const pct = stats.loi.total > 0 ? Math.round((count / stats.loi.total) * 100) : 0
                       return (
-                        <div key={status}>
+                        <Link
+                          key={status}
+                          href={count > 0 ? `/reviewer/lois?status=${status}` : '#'}
+                          className={`block ${count > 0 ? 'cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors' : 'cursor-default'}`}
+                          onClick={count === 0 ? (e) => e.preventDefault() : undefined}
+                        >
                           <div className="flex items-center justify-between mb-1">
                             <GlassBadge variant={statusBadgeVariants[status]} size="sm">
                               {statusLabels[status]}
                             </GlassBadge>
-                            <span className="text-sm font-medium text-gray-700">{count}</span>
+                            <span className={`text-sm font-medium ${count > 0 ? 'text-[var(--hff-teal)] underline decoration-dotted underline-offset-2' : 'text-gray-700'}`}>{count}</span>
                           </div>
                           <div
                             role="progressbar"
@@ -370,7 +382,7 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                        </div>
+                        </Link>
                       )
                     })}
                   </div>
@@ -393,13 +405,20 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                         const pct = stats.applications.total > 0
                           ? Math.round((count / stats.applications.total) * 100)
                           : 0
+                        const selectedCycle = cycles.find((c) => c.id === selectedCycleId)
+                        const cycleParam = selectedCycle ? `&cycle=${selectedCycle.cycle}` : ''
                         return (
-                          <div key={status}>
+                          <Link
+                            key={status}
+                            href={count > 0 ? `/reviewer/applications?status=${status}${cycleParam}` : '#'}
+                            className={`block ${count > 0 ? 'cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors' : 'cursor-default'}`}
+                            onClick={count === 0 ? (e) => e.preventDefault() : undefined}
+                          >
                             <div className="flex items-center justify-between mb-1">
                               <GlassBadge variant={statusBadgeVariants[status]} size="sm">
                                 {statusLabels[status]}
                               </GlassBadge>
-                              <span className="text-sm font-medium text-gray-700">{count}</span>
+                              <span className={`text-sm font-medium ${count > 0 ? 'text-[var(--hff-teal)] underline decoration-dotted underline-offset-2' : 'text-gray-700'}`}>{count}</span>
                             </div>
                             <div
                               role="progressbar"
@@ -413,7 +432,7 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
-                          </div>
+                          </Link>
                         )
                       })}
                     </div>
