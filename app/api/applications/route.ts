@@ -43,6 +43,19 @@ export async function POST(req: Request) {
       )
     }
 
+    // Check if profile has been reviewed for this cycle
+    const orgProfile = await prisma.organization.findUnique({
+      where: { id: dbUser.organization.id },
+      select: { profileLastReviewedForCycle: true },
+    })
+
+    if (orgProfile?.profileLastReviewedForCycle !== activeCycle.id) {
+      return NextResponse.json(
+        { error: 'PROFILE_REVIEW_REQUIRED', cycleId: activeCycle.id },
+        { status: 400 }
+      )
+    }
+
     // Check for existing application in same cycle (one per cycle enforcement)
     const existingApplication = await prisma.application.findFirst({
       where: {
