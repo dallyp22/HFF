@@ -114,8 +114,9 @@ export async function POST(req: Request) {
       notificationSent: false,
     }
 
-    if (!releaseAll && loiIds) {
-      whereClause.id = { in: loiIds }
+    if (!releaseAll) {
+      // Only query LOIs that were explicitly selected
+      whereClause.id = { in: loiIds || [] }
     }
 
     const loisToRelease = await prisma.letterOfInterest.findMany({
@@ -140,13 +141,6 @@ export async function POST(req: Request) {
         },
       },
     })
-
-    if (loisToRelease.length === 0) {
-      return NextResponse.json(
-        { error: 'No pending LOI decisions found to release' },
-        { status: 400 }
-      )
-    }
 
     const results: { loiId: string; status: string; emailSent: boolean; error?: string }[] = []
 
@@ -262,6 +256,13 @@ export async function POST(req: Request) {
 
     const successCount = results.length
     const emailsSent = results.filter((r) => r.emailSent).length
+
+    if (successCount === 0) {
+      return NextResponse.json(
+        { error: 'No pending decisions found to release' },
+        { status: 400 }
+      )
+    }
 
     return NextResponse.json({
       message: `Released ${successCount} decision(s). ${emailsSent} email(s) sent.`,
