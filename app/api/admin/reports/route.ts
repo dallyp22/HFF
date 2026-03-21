@@ -104,6 +104,29 @@ export async function GET(req: NextRequest) {
       avgTimeToDecisionDays = Math.round(totalMs / loisWithReview.length / (1000 * 60 * 60 * 24))
     }
 
+    // Fetch individual LOIs and Applications for drill-down
+    const loiRecords = await prisma.letterOfInterest.findMany({
+      where: { cycleConfigId: cycleId },
+      select: {
+        id: true,
+        status: true,
+        projectTitle: true,
+        organization: { select: { legalName: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    })
+
+    const appRecords = await prisma.application.findMany({
+      where: { grantCycle: cycleConfig.cycle, cycleYear: cycleConfig.year },
+      select: {
+        id: true,
+        status: true,
+        projectTitle: true,
+        organization: { select: { legalName: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    })
+
     // Build LOI status map
     const loiStats: Record<string, number> = {}
     let totalLois = 0
@@ -129,11 +152,13 @@ export async function GET(req: NextRequest) {
       loi: {
         total: totalLois,
         byStatus: loiStats,
+        records: loiRecords,
       },
       applications: {
         total: totalApps,
         submitted: submittedApps,
         byStatus: appStats,
+        records: appRecords,
       },
       dollars: {
         totalRequested: Number(totalRequested._sum.amountRequested ?? 0),

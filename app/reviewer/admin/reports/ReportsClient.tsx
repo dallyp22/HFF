@@ -27,17 +27,26 @@ interface Cycle {
   isActive: boolean
 }
 
+interface RecordItem {
+  id: string
+  status: string
+  projectTitle: string | null
+  organization: { legalName: string }
+}
+
 interface ReportStats {
   cycleId: string
   cycleName: string
   loi: {
     total: number
     byStatus: Record<string, number>
+    records: RecordItem[]
   }
   applications: {
     total: number
     submitted: number
     byStatus: Record<string, number>
+    records: RecordItem[]
   }
   dollars: {
     totalRequested: number
@@ -111,6 +120,16 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
   const [stats, setStats] = useState<ReportStats | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set())
+
+  const toggleStatus = (key: string) => {
+    setExpandedStatuses((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const fetchStats = useCallback(async (cycleId: string) => {
     if (!cycleId) return
@@ -353,36 +372,58 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                     <ClipboardList className="w-5 h-5 text-purple-600" />
                     LOI Pipeline
                   </h2>
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {LOI_STATUSES.map((status) => {
                       const count = stats.loi.byStatus[status] ?? 0
                       const pct = stats.loi.total > 0 ? Math.round((count / stats.loi.total) * 100) : 0
+                      const expandKey = `loi-${status}`
+                      const isExpanded = expandedStatuses.has(expandKey)
+                      const records = stats.loi.records?.filter((r) => r.status === status) || []
                       return (
-                        <Link
-                          key={status}
-                          href={count > 0 ? `/reviewer/lois?status=${status}` : '#'}
-                          className={`block ${count > 0 ? 'cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors' : 'cursor-default'}`}
-                          onClick={count === 0 ? (e) => e.preventDefault() : undefined}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <GlassBadge variant={statusBadgeVariants[status]} size="sm">
-                              {statusLabels[status]}
-                            </GlassBadge>
-                            <span className={`text-sm font-medium ${count > 0 ? 'text-[var(--hff-teal)] underline decoration-dotted underline-offset-2' : 'text-gray-700'}`}>{count}</span>
-                          </div>
-                          <div
-                            role="progressbar"
-                            aria-valuenow={count}
-                            aria-valuemax={stats.loi.total}
-                            aria-label={`${statusLabels[status]}: ${count} of ${stats.loi.total}`}
-                            className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100"
+                        <div key={status}>
+                          <button
+                            type="button"
+                            onClick={() => count > 0 && toggleStatus(expandKey)}
+                            className={`w-full text-left -mx-2 px-2 py-1.5 rounded-lg transition-colors ${count > 0 ? 'cursor-pointer hover:bg-gray-50/50' : 'cursor-default'} ${isExpanded ? 'bg-gray-50/80' : ''}`}
                           >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-1.5">
+                                {count > 0 && (
+                                  <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                                )}
+                                <GlassBadge variant={statusBadgeVariants[status]} size="sm">
+                                  {statusLabels[status]}
+                                </GlassBadge>
+                              </div>
+                              <span className={`text-sm font-medium ${count > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{count}</span>
+                            </div>
                             <div
-                              className={`h-full rounded-full transition-all duration-500 ${statusBarColors[status]}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </Link>
+                              role="progressbar"
+                              aria-valuenow={count}
+                              aria-valuemax={stats.loi.total}
+                              className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100"
+                            >
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${statusBarColors[status]}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </button>
+                          {isExpanded && records.length > 0 && (
+                            <div className="ml-5 mt-1 mb-2 space-y-0.5">
+                              {records.map((r) => (
+                                <Link
+                                  key={r.id}
+                                  href={`/reviewer/lois/${r.id}`}
+                                  className="flex items-center justify-between px-3 py-1.5 rounded-md hover:bg-[var(--hff-teal)]/5 transition-colors group"
+                                >
+                                  <span className="text-sm text-gray-700 group-hover:text-[var(--hff-teal)] truncate">{r.organization.legalName}</span>
+                                  <span className="text-xs text-gray-400 truncate ml-2 max-w-[140px]">{r.projectTitle || 'Untitled'}</span>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -399,40 +440,60 @@ export function ReportsClient({ cycles }: ReportsClientProps) {
                       No applications yet for this cycle.
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       {APP_STATUSES.map((status) => {
                         const count = stats.applications.byStatus[status] ?? 0
                         const pct = stats.applications.total > 0
                           ? Math.round((count / stats.applications.total) * 100)
                           : 0
-                        const selectedCycle = cycles.find((c) => c.id === selectedCycleId)
-                        const cycleParam = selectedCycle ? `&cycle=${selectedCycle.cycle}` : ''
+                        const expandKey = `app-${status}`
+                        const isExpanded = expandedStatuses.has(expandKey)
+                        const records = stats.applications.records?.filter((r) => r.status === status) || []
                         return (
-                          <Link
-                            key={status}
-                            href={count > 0 ? `/reviewer/applications?status=${status}${cycleParam}` : '#'}
-                            className={`block ${count > 0 ? 'cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors' : 'cursor-default'}`}
-                            onClick={count === 0 ? (e) => e.preventDefault() : undefined}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <GlassBadge variant={statusBadgeVariants[status]} size="sm">
-                                {statusLabels[status]}
-                              </GlassBadge>
-                              <span className={`text-sm font-medium ${count > 0 ? 'text-[var(--hff-teal)] underline decoration-dotted underline-offset-2' : 'text-gray-700'}`}>{count}</span>
-                            </div>
-                            <div
-                              role="progressbar"
-                              aria-valuenow={count}
-                              aria-valuemax={stats.applications.total}
-                              aria-label={`${statusLabels[status]}: ${count} of ${stats.applications.total}`}
-                              className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100"
+                          <div key={status}>
+                            <button
+                              type="button"
+                              onClick={() => count > 0 && toggleStatus(expandKey)}
+                              className={`w-full text-left -mx-2 px-2 py-1.5 rounded-lg transition-colors ${count > 0 ? 'cursor-pointer hover:bg-gray-50/50' : 'cursor-default'} ${isExpanded ? 'bg-gray-50/80' : ''}`}
                             >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                  {count > 0 && (
+                                    <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                                  )}
+                                  <GlassBadge variant={statusBadgeVariants[status]} size="sm">
+                                    {statusLabels[status]}
+                                  </GlassBadge>
+                                </div>
+                                <span className={`text-sm font-medium ${count > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{count}</span>
+                              </div>
                               <div
-                                className={`h-full rounded-full transition-all duration-500 ${statusBarColors[status]}`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </Link>
+                                role="progressbar"
+                                aria-valuenow={count}
+                                aria-valuemax={stats.applications.total}
+                                className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100"
+                              >
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${statusBarColors[status]}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </button>
+                            {isExpanded && records.length > 0 && (
+                              <div className="ml-5 mt-1 mb-2 space-y-0.5">
+                                {records.map((r) => (
+                                  <Link
+                                    key={r.id}
+                                    href={`/reviewer/applications/${r.id}`}
+                                    className="flex items-center justify-between px-3 py-1.5 rounded-md hover:bg-[var(--hff-teal)]/5 transition-colors group"
+                                  >
+                                    <span className="text-sm text-gray-700 group-hover:text-[var(--hff-teal)] truncate">{r.organization.legalName}</span>
+                                    <span className="text-xs text-gray-400 truncate ml-2 max-w-[140px]">{r.projectTitle || 'Untitled'}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
