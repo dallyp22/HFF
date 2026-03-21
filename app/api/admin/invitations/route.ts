@@ -69,7 +69,7 @@ export async function POST(req: Request) {
             </div>
 
             <p style="font-size: 14px; color: #6b7280; margin-top: 30px; text-align: center;">
-              Questions? Contact us at grants@heistandfamilyfoundation.org
+              Questions? Contact us at grants@heistandfamilygrants.app
             </p>
           </div>
           <div style="padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">

@@ -2,8 +2,8 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'Heistand Family Foundation <grants@heistandfamilyfoundation.org>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://grants.heistandfamilyfoundation.org'
+const FROM_EMAIL = process.env.EMAIL_FROM || 'Heistand Family Foundation <grants@heistandfamilygrants.app>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.heistandfamilygrants.app'
 
 interface SendEmailOptions {
   to: string | string[]
@@ -147,7 +147,7 @@ export async function sendLOIApproved(params: {
         </div>
 
         <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-          If you have any questions, please contact us at grants@heistandfamilyfoundation.org
+          If you have any questions, please contact us at grants@heistandfamilygrants.app
         </p>
       </div>
       <div style="padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
@@ -398,7 +398,7 @@ export async function sendInfoRequest(params: {
         </div>
 
         <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-          If you have questions, please contact us at grants@heistandfamilyfoundation.org
+          If you have questions, please contact us at grants@heistandfamilygrants.app
         </p>
       </div>
       <div style="padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
