@@ -446,6 +446,10 @@ model Application {
   // Custom Fields (admin-defined questions, stored as JSON)
   customFields          Json?
 
+  // Batch Release (decision notifications sent via Releases page)
+  notificationSent      Boolean           @default(false)
+  notificationSentAt    DateTime?
+
   // Application Progress (for multi-step form)
   currentStep           Int               @default(1)
   completedSteps        Int[]             @default([])

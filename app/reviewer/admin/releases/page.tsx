@@ -30,30 +30,29 @@ import {
 
 type FilterTab = 'all' | 'approved' | 'declined'
 
-interface PendingLOI {
+interface PendingItem {
   id: string
   projectTitle: string | null
   status: string
-  reviewedAt: string | null
-  reviewedByName: string | null
-  primaryContactEmail: string | null
-  decisionReason: string | null
+  reviewedAt?: string | null
+  reviewedByName?: string | null
+  primaryContactEmail?: string | null
+  decisionReason?: string | null
+  updatedAt?: string
+  type: 'loi' | 'application'
   organization: {
     legalName: string
-    ein: string
+    ein?: string
   }
-  cycleConfig: {
+  cycleConfig?: {
     cycle: string
     year: number
     fullAppDeadline: string | null
   }
-  application: {
-    id: string
-  } | null
 }
 
 export default function ReleasesPage() {
-  const [lois, setLois] = useState<PendingLOI[]>([])
+  const [items, setItems] = useState<PendingItem[]>([])
   const [loading, setLoading] = useState(true)
   const [releasing, setReleasing] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -70,7 +69,16 @@ export default function ReleasesPage() {
       const response = await fetch('/api/admin/releases')
       if (response.ok) {
         const data = await response.json()
-        setLois(data)
+        // Normalize LOIs and Applications into a unified list
+        const loiItems: PendingItem[] = (data.lois || []).map((l: any) => ({
+          ...l,
+          type: 'loi' as const,
+        }))
+        const appItems: PendingItem[] = (data.applications || []).map((a: any) => ({
+          ...a,
+          type: 'application' as const,
+        }))
+        setItems([...loiItems, ...appItems])
       } else {
         toast.error('Failed to load pending releases')
       }
@@ -82,14 +90,14 @@ export default function ReleasesPage() {
     }
   }
 
-  const filteredLois = useMemo(() => {
-    if (activeTab === 'all') return lois
-    if (activeTab === 'approved') return lois.filter((l) => l.status === 'APPROVED')
-    return lois.filter((l) => l.status === 'DECLINED')
-  }, [lois, activeTab])
+  const filteredItems = useMemo(() => {
+    if (activeTab === 'all') return items
+    if (activeTab === 'approved') return items.filter((l) => l.status === 'APPROVED')
+    return items.filter((l) => l.status === 'DECLINED')
+  }, [items, activeTab])
 
-  const approvedCount = lois.filter((l) => l.status === 'APPROVED').length
-  const declinedCount = lois.filter((l) => l.status === 'DECLINED').length
+  const approvedCount = items.filter((l) => l.status === 'APPROVED').length
+  const declinedCount = items.filter((l) => l.status === 'DECLINED').length
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -104,7 +112,7 @@ export default function ReleasesPage() {
   }
 
   const toggleSelectAll = () => {
-    const filteredIds = filteredLois.map((l) => l.id)
+    const filteredIds = filteredItems.map((l) => l.id)
     const allSelected = filteredIds.every((id) => selectedIds.has(id))
 
     if (allSelected) {
@@ -141,10 +149,15 @@ export default function ReleasesPage() {
     setConfirmDialogOpen(false)
 
     try {
-      const body =
-        releaseMode === 'all'
-          ? { releaseAll: true }
-          : { loiIds: Array.from(selectedIds) }
+      let body: any
+      if (releaseMode === 'all') {
+        body = { releaseAll: true }
+      } else {
+        const selectedItems = items.filter((i) => selectedIds.has(i.id))
+        const loiIds = selectedItems.filter((i) => i.type === 'loi').map((i) => i.id)
+        const applicationIds = selectedItems.filter((i) => i.type === 'application').map((i) => i.id)
+        body = { loiIds, applicationIds }
+      }
 
       const response = await fetch('/api/admin/releases', {
         method: 'POST',
@@ -179,7 +192,7 @@ export default function ReleasesPage() {
   }
 
   const tabs: { key: FilterTab; label: string; count: number }[] = [
-    { key: 'all', label: 'All Pending', count: lois.length },
+    { key: 'all', label: 'All Pending', count: items.length },
     { key: 'approved', label: 'Award Consideration', count: approvedCount },
     { key: 'declined', label: 'No Funding Consideration', count: declinedCount },
   ]
@@ -212,7 +225,7 @@ export default function ReleasesPage() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Release Decisions</h1>
                 <p className="text-gray-600">
-                  Notify applicants of LOI decisions
+                  Notify applicants of LOI and Application decisions
                 </p>
               </div>
             </div>
@@ -232,12 +245,12 @@ export default function ReleasesPage() {
               </Button>
               <Button
                 onClick={handleReleaseAll}
-                disabled={lois.length === 0 || releasing}
+                disabled={items.length === 0 || releasing}
                 variant="outline"
                 className="gap-2"
               >
                 <Mail className="w-4 h-4" />
-                Release All ({lois.length})
+                Release All ({items.length})
               </Button>
             </div>
           </div>
@@ -272,7 +285,7 @@ export default function ReleasesPage() {
         </FadeIn>
 
         {/* LOI List */}
-        {filteredLois.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <FadeIn delay={0.1}>
             <GlassCard className="py-16 text-center" hover={false}>
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
@@ -294,19 +307,19 @@ export default function ReleasesPage() {
             <div className="flex items-center gap-3 mb-3 px-2">
               <Checkbox
                 checked={
-                  filteredLois.length > 0 &&
-                  filteredLois.every((l) => selectedIds.has(l.id))
+                  filteredItems.length > 0 &&
+                  filteredItems.every((l) => selectedIds.has(l.id))
                 }
                 onCheckedChange={toggleSelectAll}
               />
               <span className="text-sm text-gray-500">
-                Select all ({filteredLois.length})
+                Select all ({filteredItems.length})
               </span>
             </div>
 
             <div className="space-y-3">
               <AnimatePresence>
-                {filteredLois.map((loi, index) => {
+                {filteredItems.map((loi, index) => {
                   const isSelected = selectedIds.has(loi.id)
                   const isApproved = loi.status === 'APPROVED'
 
@@ -342,6 +355,9 @@ export default function ReleasesPage() {
                                 <span className="font-semibold text-gray-900 truncate">
                                   {loi.organization.legalName}
                                 </span>
+                                <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${loi.type === 'application' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                  {loi.type === 'application' ? 'App' : 'LOI'}
+                                </span>
                               </div>
                               <GlassBadge
                                 variant={isApproved ? 'success' : 'error'}
@@ -365,14 +381,16 @@ export default function ReleasesPage() {
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5" />
-                                Reviewed: {formatDate(loi.reviewedAt)}
+                                Decided: {formatDate(loi.reviewedAt || loi.updatedAt || null)}
                               </span>
                               {loi.reviewedByName && (
                                 <span>By: {loi.reviewedByName}</span>
                               )}
-                              <span>
-                                {loi.cycleConfig.cycle} {loi.cycleConfig.year}
-                              </span>
+                              {loi.cycleConfig && (
+                                <span>
+                                  {loi.cycleConfig.cycle} {loi.cycleConfig.year}
+                                </span>
+                              )}
                               {loi.primaryContactEmail && (
                                 <span className="flex items-center gap-1">
                                   <Mail className="w-3.5 h-3.5" />
@@ -401,14 +419,14 @@ export default function ReleasesPage() {
               </DialogTitle>
               <DialogDescription>
                 {releaseMode === 'all'
-                  ? `This will release all ${lois.length} pending decision(s) and send email notifications to applicants. Decisions will become visible on applicant dashboards immediately.`
+                  ? `This will release all ${items.length} pending decision(s) and send email notifications to applicants. Decisions will become visible on applicant dashboards immediately.`
                   : `This will release ${selectedIds.size} selected decision(s) and send email notifications to applicants. Decisions will become visible on applicant dashboards immediately.`}
               </DialogDescription>
             </DialogHeader>
 
             {releaseMode !== 'all' && selectedIds.size > 0 && (
               <div className="max-h-40 overflow-y-auto space-y-1 py-2">
-                {filteredLois
+                {filteredItems
                   .filter((l) => selectedIds.has(l.id))
                   .map((loi) => (
                     <div

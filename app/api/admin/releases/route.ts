@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth/access'
-import { sendLOIApproved, sendLOIDeclined } from '@/lib/email'
+import { sendLOIApproved, sendLOIDeclined, sendApplicationStatusChange } from '@/lib/email'
 
 // GET - Returns LOIs pending release (decided but not yet notified)
 export async function GET() {
@@ -49,7 +49,31 @@ export async function GET() {
       orderBy: { reviewedAt: 'desc' },
     })
 
-    return NextResponse.json(pendingLois)
+    // Also fetch pending application decisions
+    const pendingApplications = await prisma.application.findMany({
+      where: {
+        status: { in: ['APPROVED', 'DECLINED'] },
+        notificationSent: false,
+      },
+      include: {
+        organization: {
+          select: {
+            legalName: true,
+            ein: true,
+            users: {
+              select: { email: true },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    })
+
+    return NextResponse.json({
+      lois: pendingLois,
+      applications: pendingApplications,
+    })
   } catch (error) {
     console.error('Error fetching pending releases:', error)
     return NextResponse.json(
@@ -75,11 +99,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { loiIds, releaseAll } = body as { loiIds?: string[]; releaseAll?: boolean }
+    const { loiIds, applicationIds, releaseAll } = body as { loiIds?: string[]; applicationIds?: string[]; releaseAll?: boolean }
 
-    if (!releaseAll && (!loiIds || loiIds.length === 0)) {
+    if (!releaseAll && (!loiIds || loiIds.length === 0) && (!applicationIds || applicationIds.length === 0)) {
       return NextResponse.json(
-        { error: 'Provide loiIds or set releaseAll to true' },
+        { error: 'Provide loiIds, applicationIds, or set releaseAll to true' },
         { status: 400 }
       )
     }
@@ -174,6 +198,68 @@ export async function POST(req: Request) {
       })
     }
 
+    // Release Application decisions
+    const appWhereClause: any = {
+      status: { in: ['APPROVED', 'DECLINED'] },
+      notificationSent: false,
+    }
+
+    if (!releaseAll && applicationIds) {
+      appWhereClause.id = { in: applicationIds }
+    } else if (!releaseAll && !applicationIds) {
+      // If only loiIds were provided, skip applications
+      appWhereClause.id = { in: [] }
+    }
+
+    const appsToRelease = await prisma.application.findMany({
+      where: appWhereClause,
+      include: {
+        organization: {
+          select: {
+            legalName: true,
+            users: {
+              select: { email: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    })
+
+    for (const app of appsToRelease) {
+      const applicantEmail = app.organization.users[0]?.email
+
+      let emailSent = false
+
+      if (applicantEmail) {
+        try {
+          await sendApplicationStatusChange({
+            applicationId: app.id,
+            projectTitle: app.projectTitle || 'Your Application',
+            newStatus: app.status,
+            applicantEmail,
+          })
+          emailSent = true
+        } catch (emailError) {
+          console.error(`Failed to send email for Application ${app.id}:`, emailError)
+        }
+      }
+
+      await prisma.application.update({
+        where: { id: app.id },
+        data: {
+          notificationSent: true,
+          notificationSentAt: new Date(),
+        },
+      })
+
+      results.push({
+        loiId: app.id,
+        status: app.status,
+        emailSent,
+      })
+    }
+
     const successCount = results.length
     const emailsSent = results.filter((r) => r.emailSent).length
 
@@ -184,9 +270,9 @@ export async function POST(req: Request) {
       emailsSentCount: emailsSent,
     })
   } catch (error) {
-    console.error('Error releasing LOI decisions:', error)
+    console.error('Error releasing decisions:', error)
     return NextResponse.json(
-      { error: 'Failed to release LOI decisions' },
+      { error: 'Failed to release decisions' },
       { status: 500 }
     )
   }

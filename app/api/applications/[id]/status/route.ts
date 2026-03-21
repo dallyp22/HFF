@@ -92,9 +92,12 @@ export async function PATCH(
       },
     })
 
-    // Send email notification for significant status changes
+    // Send email notification for operational status changes only.
+    // APPROVED and DECLINED are decision notifications — those go through
+    // the Releases page (/reviewer/admin/releases) so the admin can batch
+    // and review them before they reach applicants.
     const applicantEmail = application.organization.users[0]?.email
-    if (applicantEmail && ['APPROVED', 'DECLINED', 'INFO_REQUESTED', 'UNDER_REVIEW'].includes(newStatus)) {
+    if (applicantEmail && ['INFO_REQUESTED', 'UNDER_REVIEW'].includes(newStatus)) {
       sendApplicationStatusChange({
         applicationId: id,
         projectTitle: application.projectTitle || 'Your Application',
