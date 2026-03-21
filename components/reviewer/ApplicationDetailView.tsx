@@ -31,6 +31,7 @@ import {
   TrendingUp,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   ExternalLink,
   Image as ImageIcon,
 } from 'lucide-react'
@@ -104,6 +105,7 @@ export function ApplicationDetailView({
   userIsManager,
 }: ApplicationDetailViewProps) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [analysisOpen, setAnalysisOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
@@ -249,7 +251,7 @@ export function ApplicationDetailView({
             <FadeIn delay={0.05}>
               <Link
                 href={`/reviewer/organizations/${application.organizationId}`}
-                className="flex items-center justify-between w-full px-4 py-3 mb-3 rounded-xl bg-[var(--hff-teal)]/10 border border-[var(--hff-teal)]/20 hover:bg-[var(--hff-teal)]/15 transition-colors group"
+                className="flex items-center justify-between w-full px-4 py-3 mb-3 rounded-xl bg-[var(--hff-teal)]/15 border border-[var(--hff-teal)]/30 hover:bg-[var(--hff-teal)]/25 hover:border-[var(--hff-teal)]/40 transition-colors group shadow-sm"
               >
                 <div className="flex items-center gap-3">
                   <Building2 className="w-5 h-5 text-[var(--hff-teal)]" />
@@ -262,37 +264,46 @@ export function ApplicationDetailView({
               </Link>
             </FadeIn>
 
-            {/* Header */}
-            <div className="mb-5 pb-4 border-b border-gray-200/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-gray-100 shadow-sm">
-                  <FileText className="w-5 h-5 text-gray-500" />
+            {/* Collapsible Staff Notes & Analysis */}
+            <button
+              type="button"
+              onClick={() => setAnalysisOpen(!analysisOpen)}
+              className="w-full mb-3 pb-3 border-b border-gray-200/50 text-left hover:bg-gray-50/50 -mx-1 px-1 rounded-lg transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-gray-100 shadow-sm">
+                    <FileText className="w-5 h-5 text-gray-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Staff Notes & Analysis</h2>
+                    <p className="text-[10px] text-gray-500 font-medium">Supplementary analysis</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <h2 className="text-sm font-bold text-gray-900">Staff Notes & Analysis</h2>
-                  <p className="text-[10px] text-gray-500 font-medium">Supplementary analysis</p>
-                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${analysisOpen ? '' : '-rotate-90'}`} />
               </div>
+            </button>
 
-              {/* Disclaimer */}
-              <p className="mt-3 text-[10px] text-gray-400 leading-relaxed">
-                AI analysis is supplementary. Decisions should be based on thorough application review.
-              </p>
-            </div>
-
-            <AISummaryDisplay
-              summary={application.aiSummary}
-              missionAlignment={application.aiMissionAlignment}
-              budgetAnalysis={application.aiBudgetAnalysis}
-              strengths={application.aiStrengths || []}
-              concerns={application.aiConcerns || []}
-              questions={application.aiQuestions || []}
-              generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
-              applicationId={application.id}
-              isAdmin={userIsAdmin}
-              highlights={highlights}
-              onHighlightChange={fetchHighlights}
-            />
+            {analysisOpen && (
+              <div>
+                <p className="mb-3 text-[10px] text-gray-400 leading-relaxed">
+                  AI analysis is supplementary. Decisions should be based on thorough application review.
+                </p>
+                <AISummaryDisplay
+                  summary={application.aiSummary}
+                  missionAlignment={application.aiMissionAlignment}
+                  budgetAnalysis={application.aiBudgetAnalysis}
+                  strengths={application.aiStrengths || []}
+                  concerns={application.aiConcerns || []}
+                  questions={application.aiQuestions || []}
+                  generatedAt={application.aiSummaryGeneratedAt?.toString() || null}
+                  applicationId={application.id}
+                  isAdmin={userIsAdmin}
+                  highlights={highlights}
+                  onHighlightChange={fetchHighlights}
+                />
+              </div>
+            )}
           </div>
         </FadeIn>
 
