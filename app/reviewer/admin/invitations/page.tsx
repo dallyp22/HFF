@@ -20,7 +20,7 @@ import {
 import Link from 'next/link'
 import { toast } from 'sonner'
 
-const PRODUCTION_URL = 'https://hff-five.vercel.app'
+const PRODUCTION_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.heistandfamilygrants.app'
 
 export default function InvitationsPage() {
   const [copied, setCopied] = useState<string | null>(null)

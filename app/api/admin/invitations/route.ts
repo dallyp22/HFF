@@ -5,7 +5,7 @@ import { sendEmail } from '@/lib/email'
 
 const SIGN_UP_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/sign-up`
-  : 'https://hff-five.vercel.app/sign-up'
+  : 'https://www.heistandfamilygrants.app/sign-up'
 
 export async function POST(req: Request) {
   try {
