@@ -224,17 +224,17 @@ export default function HomePage() {
                   Our Impact
                 </h2>
                 <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                  Since our founding, we've partnered with organizations to create meaningful change.
+                  Since our founding in 2016, we've partnered with organizations to create meaningful change focused on kids.
                 </p>
               </div>
             </FadeIn>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
               {[
-                { value: 150, suffix: '+', label: 'Grants Awarded', icon: Target },
-                { value: 2.5, prefix: '$', suffix: 'M+', label: 'Total Funding', icon: TrendingUp },
+                { value: 250, suffix: '+', label: 'Grants Awarded', icon: Target },
+                { value: 5.5, prefix: '$', suffix: 'M+', label: 'Total Funding', icon: TrendingUp },
                 { value: 50000, suffix: '+', label: 'Children Served', icon: Users },
-                { value: 12, suffix: '+', label: 'Years of Impact', icon: Heart },
+                { value: 10, suffix: '+', label: 'Years of Impact', icon: Heart },
               ].map((stat, index) => (
                 <FadeIn key={stat.label} delay={index * 0.1}>
                   <motion.div
