@@ -338,6 +338,7 @@ export function ApplicationDetailView({
                   if (tab.id === 'notes') count = application.notes?.length || 0
                   if (tab.id === 'docs') count = application.documents?.length || 0
 
+                  const isVoting = tab.id === 'voting'
                   return (
                     <button
                       key={tab.id}
@@ -345,7 +346,9 @@ export function ApplicationDetailView({
                       className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap ${
                         isActive
                           ? 'text-[var(--hff-teal)] bg-white shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+                          : isVoting
+                            ? 'text-[var(--hff-teal)] bg-[var(--hff-teal)]/5 hover:bg-[var(--hff-teal)]/10'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
