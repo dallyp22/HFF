@@ -245,13 +245,13 @@ export function ApplicationDetailView({
       {/* Main Content - Split Panel */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Staff Notes & Analysis */}
-        <FadeIn delay={0.1} className="w-80 lg:w-96 flex-shrink-0 hidden md:block">
-          <div className="h-full overflow-y-auto bg-gradient-to-b from-[var(--hff-teal)]/[0.02] via-slate-50/80 to-white/60 backdrop-blur-sm border-r border-[var(--hff-teal)]/10 p-5">
+        <FadeIn delay={0.1} className="w-64 lg:w-72 flex-shrink-0 hidden md:block">
+          <div className="h-full overflow-y-auto bg-gradient-to-b from-[var(--hff-teal)]/[0.02] via-slate-50/80 to-white/60 backdrop-blur-sm border-r border-[var(--hff-teal)]/10 p-4">
             {/* Prominent Organization Profile Button */}
             <FadeIn delay={0.05}>
               <Link
                 href={`/reviewer/organizations/${application.organizationId}`}
-                className="flex items-center justify-between w-full px-4 py-3 mb-3 rounded-xl bg-[var(--hff-teal)]/15 border border-[var(--hff-teal)]/30 hover:bg-[var(--hff-teal)]/25 hover:border-[var(--hff-teal)]/40 transition-colors group shadow-sm"
+                className="flex items-center justify-between w-full px-3 py-2.5 mb-2 rounded-lg bg-[var(--hff-teal)]/15 border border-[var(--hff-teal)]/30 hover:bg-[var(--hff-teal)]/25 hover:border-[var(--hff-teal)]/40 transition-colors group shadow-sm"
               >
                 <div className="flex items-center gap-3">
                   <Building2 className="w-5 h-5 text-[var(--hff-teal)]" />
@@ -268,7 +268,7 @@ export function ApplicationDetailView({
             <button
               type="button"
               onClick={() => setAnalysisOpen(!analysisOpen)}
-              className="w-full mb-3 pb-3 border-b border-gray-200/50 text-left hover:bg-gray-50/50 -mx-1 px-1 rounded-lg transition-colors"
+              className="w-full mb-2 pb-2 border-b border-gray-200/50 text-left hover:bg-gray-50/50 -mx-1 px-1 rounded-lg transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
